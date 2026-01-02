@@ -1,0 +1,24 @@
+User
+-register account
+-user login
+-access home dashboard
+-access user profile (manage user profile)
+-access module/lesson (retrieve lesson content)
+-practice pronunciation (receive real time pronunciation feedback, generate feedback, store pronunciation attempts,phoneme- level analysis, analyze pronunciation audio)
+-conversation practice (generate conversation responses)
+-take quiz (adapt lesson difficulty)
+-save offline lessons
+-earn rewards
+-request translation (provide translation)
+-send feedback
+-view leaderboard (filter leaderboard)
+-track pronunciation history
+-user logout
+
+admin
+-admin register
+-admin login
+- view user analytics
+-manage content (manage phoneme library, manage ai training prompts, manage users, manage announcements, manage difficulty levels)
+-review user feedback
+-logout

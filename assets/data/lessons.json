@@ -1,0 +1,342 @@
+[
+  {
+    "title": "Basic Greetings",
+    "titleMalay": "Ucapan Asas",
+    "description": "Learn common Malay greetings and responses",
+    "category": "Basics",
+    "difficulty": 1,
+    "xpReward": 10,
+    "contents": [
+      {
+        "malay": "Selamat pagi",
+        "english": "Good morning",
+        "phonemes": ["pa", "gi"]
+      },
+      {
+        "malay": "Selamat petang",
+        "english": "Good afternoon",
+        "phonemes": ["pe", "tang"]
+      },
+      {
+        "malay": "Selamat malam",
+        "english": "Good evening/night",
+        "phonemes": ["ma", "lam"]
+      },
+      {
+        "malay": "Apa khabar?",
+        "english": "How are you?",
+        "phonemes": ["kha", "bar"]
+      },
+      {
+        "malay": "Khabar baik",
+        "english": "I'm fine",
+        "phonemes": ["kha", "bar", "baik"]
+      }
+    ]
+  },
+  {
+    "title": "Numbers 1-10",
+    "titleMalay": "Nombor 1-10",
+    "description": "Master counting from one to ten in Malay",
+    "category": "Numbers",
+    "difficulty": 1,
+    "xpReward": 10,
+    "contents": [
+      {
+        "malay": "Satu",
+        "english": "One",
+        "phonemes": ["sa", "tu"]
+      },
+      {
+        "malay": "Dua",
+        "english": "Two",
+        "phonemes": ["du", "a"]
+      },
+      {
+        "malay": "Tiga",
+        "english": "Three",
+        "phonemes": ["ti", "ga"]
+      },
+      {
+        "malay": "Empat",
+        "english": "Four",
+        "phonemes": ["em", "pat"]
+      },
+      {
+        "malay": "Lima",
+        "english": "Five",
+        "phonemes": ["li", "ma"]
+      },
+      {
+        "malay": "Enam",
+        "english": "Six",
+        "phonemes": ["e", "nam"]
+      },
+      {
+        "malay": "Tujuh",
+        "english": "Seven",
+        "phonemes": ["tu", "juh"]
+      },
+      {
+        "malay": "Lapan",
+        "english": "Eight",
+        "phonemes": ["la", "pan"]
+      },
+      {
+        "malay": "Sembilan",
+        "english": "Nine",
+        "phonemes": ["sem", "bi", "lan"]
+      },
+      {
+        "malay": "Sepuluh",
+        "english": "Ten",
+        "phonemes": ["se", "pu", "luh"]
+      }
+    ]
+  },
+  {
+    "title": "Family Members",
+    "titleMalay": "Ahli Keluarga",
+    "description": "Learn to identify family members in Malay",
+    "category": "Family",
+    "difficulty": 2,
+    "xpReward": 15,
+    "contents": [
+      {
+        "malay": "Ibu",
+        "english": "Mother",
+        "phonemes": ["i", "bu"]
+      },
+      {
+        "malay": "Bapa",
+        "english": "Father",
+        "phonemes": ["ba", "pa"]
+      },
+      {
+        "malay": "Abang",
+        "english": "Older brother",
+        "phonemes": ["a", "bang"]
+      },
+      {
+        "malay": "Kakak",
+        "english": "Older sister",
+        "phonemes": ["ka", "kak"]
+      },
+      {
+        "malay": "Adik",
+        "english": "Younger sibling",
+        "phonemes": ["a", "dik"]
+      },
+      {
+        "malay": "Nenek",
+        "english": "Grandmother",
+        "phonemes": ["ne", "nek"]
+      },
+      {
+        "malay": "Datuk",
+        "english": "Grandfather",
+        "phonemes": ["da", "tuk"]
+      }
+    ]
+  },
+  {
+    "title": "Common Phrases",
+    "titleMalay": "Frasa Biasa",
+    "description": "Essential phrases for daily conversation",
+    "category": "Conversation",
+    "difficulty": 2,
+    "xpReward": 15,
+    "contents": [
+      {
+        "malay": "Terima kasih",
+        "english": "Thank you",
+        "phonemes": ["te", "ri", "ma", "ka", "sih"]
+      },
+      {
+        "malay": "Sama-sama",
+        "english": "You're welcome",
+        "phonemes": ["sa", "ma"]
+      },
+      {
+        "malay": "Maaf",
+        "english": "Sorry",
+        "phonemes": ["ma", "af"]
+      },
+      {
+        "malay": "Tolong",
+        "english": "Please/Help",
+        "phonemes": ["to", "long"]
+      },
+      {
+        "malay": "Ya",
+        "english": "Yes",
+        "phonemes": ["ya"]
+      },
+      {
+        "malay": "Tidak",
+        "english": "No",
+        "phonemes": ["ti", "dak"]
+      }
+    ]
+  },
+  {
+    "title": "Colors",
+    "titleMalay": "Warna",
+    "description": "Learn to name different colors in Malay",
+    "category": "Vocabulary",
+    "difficulty": 2,
+    "xpReward": 15,
+    "contents": [
+      {
+        "malay": "Merah",
+        "english": "Red",
+        "phonemes": ["me", "rah"]
+      },
+      {
+        "malay": "Biru",
+        "english": "Blue",
+        "phonemes": ["bi", "ru"]
+      },
+      {
+        "malay": "Kuning",
+        "english": "Yellow",
+        "phonemes": ["ku", "ning"]
+      },
+      {
+        "malay": "Hijau",
+        "english": "Green",
+        "phonemes": ["hi", "jau"]
+      },
+      {
+        "malay": "Hitam",
+        "english": "Black",
+        "phonemes": ["hi", "tam"]
+      },
+      {
+        "malay": "Putih",
+        "english": "White",
+        "phonemes": ["pu", "tih"]
+      }
+    ]
+  },
+  {
+    "title": "Food & Drinks",
+    "titleMalay": "Makanan & Minuman",
+    "description": "Common food and drink vocabulary",
+    "category": "Food",
+    "difficulty": 3,
+    "xpReward": 20,
+    "contents": [
+      {
+        "malay": "Nasi",
+        "english": "Rice",
+        "phonemes": ["na", "si"]
+      },
+      {
+        "malay": "Air",
+        "english": "Water",
+        "phonemes": ["a", "ir"]
+      },
+      {
+        "malay": "Kopi",
+        "english": "Coffee",
+        "phonemes": ["ko", "pi"]
+      },
+      {
+        "malay": "Teh",
+        "english": "Tea",
+        "phonemes": ["teh"]
+      },
+      {
+        "malay": "Roti",
+        "english": "Bread",
+        "phonemes": ["ro", "ti"]
+      },
+      {
+        "malay": "Ayam",
+        "english": "Chicken",
+        "phonemes": ["a", "yam"]
+      },
+      {
+        "malay": "Ikan",
+        "english": "Fish",
+        "phonemes": ["i", "kan"]
+      }
+    ]
+  },
+  {
+    "title": "Days of the Week",
+    "titleMalay": "Hari dalam Seminggu",
+    "description": "Learn all seven days of the week",
+    "category": "Time",
+    "difficulty": 3,
+    "xpReward": 20,
+    "contents": [
+      {
+        "malay": "Isnin",
+        "english": "Monday",
+        "phonemes": ["is", "nin"]
+      },
+      {
+        "malay": "Selasa",
+        "english": "Tuesday",
+        "phonemes": ["se", "la", "sa"]
+      },
+      {
+        "malay": "Rabu",
+        "english": "Wednesday",
+        "phonemes": ["ra", "bu"]
+      },
+      {
+        "malay": "Khamis",
+        "english": "Thursday",
+        "phonemes": ["kha", "mis"]
+      },
+      {
+        "malay": "Jumaat",
+        "english": "Friday",
+        "phonemes": ["ju", "ma", "at"]
+      },
+      {
+        "malay": "Sabtu",
+        "english": "Saturday",
+        "phonemes": ["sab", "tu"]
+      },
+      {
+        "malay": "Ahad",
+        "english": "Sunday",
+        "phonemes": ["a", "had"]
+      }
+    ]
+  },
+  {
+    "title": "At the Market",
+    "titleMalay": "Di Pasar",
+    "description": "Shopping and market conversation",
+    "category": "Conversation",
+    "difficulty": 4,
+    "xpReward": 25,
+    "contents": [
+      {
+        "malay": "Berapa harga ini?",
+        "english": "How much is this?",
+        "phonemes": ["be", "ra", "pa", "har", "ga"]
+      },
+      {
+        "malay": "Terlalu mahal",
+        "english": "Too expensive",
+        "phonemes": ["ter", "la", "lu", "ma", "hal"]
+      },
+      {
+        "malay": "Saya mahu beli",
+        "english": "I want to buy",
+        "phonemes": ["sa", "ya", "ma", "hu", "be", "li"]
+      },
+      {
+        "malay": "Boleh kurang?",
+        "english": "Can you reduce the price?",
+        "phonemes": ["bo", "leh", "ku", "rang"]
+      }
+    ]
+  }
+]

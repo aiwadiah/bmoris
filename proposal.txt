@@ -1,0 +1,191 @@
+IPB49804: BSE FYP1 PROPOSAL FORM 
+OCTOBER 2025 
+Student Information 
+Full Name 
+Student ID 
+Phone Number 
+Supervisor Name 
+Team Information (if applicable) 
+Team Member’s Details (if working in a group): 
+Full Name 
+Student ID 
+Phone Number 
+Project Details 
+Proposed Project Title 
+Provide a concise and clear project title that reflects the core objective of your project. 
+BMoris – Bahasa Melayu Speech Assistant application that teaches how to pronounce the Malay 
+language. 
+Project Overview 
+Briefly describe the problem your project aims to solve, the objectives of the project, and the 
+significance of the work. 
+"Bahasa Melayu Speech Assistant" (BMoris) combines AI speech recognition, adaptive feedback, 
+and gamified learning to help learners improve Malay pronunciation, grammar, and their 
+confidence. Designed for non-native Malaysians, foreign learners, and adult second-language 
+learners in Malaysia, the app utilizes interactive voice recognition and guided practice to provide 
+users with real-time feedback, enabling them to naturally improve and correct errors. BMoris 
+can be used by schools, self-learners, and professionals to improve Malay pronunciation 
+anytime, anywhere because of its flexibility, offline mode and AI driven design, making it suitable 
+for both academic and personal learning contexts. The learning content in BMoris is structured 
+based on the International Malay Communication Module, developed under the guidance of 
+Madam Wardatul Aisyah, the Head of the International Section at Universiti Kuala Lumpur 
+(MIIT). 
+Page | 1 
+IPB49804: BSE FYP1 PROPOSAL FORM 
+OCTOBER 2025 
+Page | 2 
+ 
+ 
+1. AI Speech recognition with pronunciation feedback - Listens to learners’ pronunciation and gives real time feedback on word accuracy and 
+phonemes. 
+ 
+2. AI Chatbot (Bilingual Tutor) - Acts like a virtual tutor, allowing learners to practice speaking and receive instant 
+corrections or translations. 
+ 
+3. Adaptive Learning Engine - Gives personalized lessons and reviews by using spaced repetition or AI mastery scoring. 
+ 
+4. Gamified Learning (Points, Streaks, Badges, Leaderboards) - Motivates learners through engaging game-like progression, rewards, and leaderboards 
+for encouraging consistent daily learning. 
+ 
+5. Progress Tracking & Analytics - Shows learners’ progress, pronunciation improvement, and proficiency growth. 
+ 
+6. Phoneme-Level Analysis (Malay-Specific Sounds) - Detects and visualizes pronunciation for Malay phonemes and provides detailed 
+feedback on articulation. 
+ 
+ 
+ 
+ 
+ 
+ Key Features 
+List the main features of your project. 
+Objectives  
+1. To provide real-time pronunciation feedback that helps learners recognise and correct 
+their mistakes. 
+2. To track and analyse learners’ pronunciation progress through performance records and 
+visual reports. 
+3. To offer personalised learning experiences using AI that adapts lessons to each learner’s 
+ability. 
+4. To create interactive speaking practice through a bilingual AI chatbot that simulates real 
+conversations. 
+ 
+This project aims to create a system that serves as an alternative to improve the Malay language. 
+Initiatives can be enhanced and used in more institutes. The way learners learn will be more fun 
+and engaging. 
+IPB49804: BSE FYP1 PROPOSAL FORM 
+OCTOBER 2025 
+Problem Statements 
+What specific problems does your project aim to address? 
+1. Difficulty Recognising and Correcting Pronunciation Mistakes Leads to Low Confidence 
+Learners frequently practise speaking without real-time correction, reinforcing incorrect 
+pronunciation patterns. Nowawi and Ahmad (2023) observed that when learners used interactive 
+Malay language applications, they were able to practise pronunciation more effectively and gained 
+confidence compared to traditional classroom-only approaches. Similarly, Lo et al. (2025) found 
+that Duolingo’s features such as “Listen and Repeat” exercises helped students model native 
+pronunciation, which directly improved their speaking skills and boosted their confidence in 
+communication. The lack of regular guided practice causes mistakes to persist over time and leads 
+to low confidence when speaking Bahasa Melayu, as learners are afraid of being misunderstood 
+or making mistakes in real-life conversations. 
+2. Difficulty in Tracking and Assessing Pronunciation Progress 
+Tracking the improvement of Bahasa Melayu pronunciation is challenging without an efficient tool 
+to record and evaluate speech. Learners and instructors alike face difficulties in assessing whether 
+the learner's pronunciation is improving, where the weaknesses lie, and what specific areas need 
+more practice. This makes it hard to implement personalized learning strategies or monitor 
+progress effectively. Hawamdeh and Soykan (2021) highlighted that mobile technologies allow 
+teachers and students to systematically monitor language progress through features like quizzes 
+and analytics, which are difficult to achieve with traditional methods. In line with this, Jumadi et 
+al. (2024) argued that artificial intelligence can provide adaptive feedback and performance 
+tracking, helping educators identify weak areas and tailor instruction more effectively. 
+3. Limited Access to Personalized Language Learning Tools 
+Many Bahasa Melayu learners, especially non-native speakers, lack access to language resources 
+that provide them with individualised pronunciation feedback. Jumadi et al. (2024) emphasised 
+that many existing language tools provide only general feedback, which is frustrating for learners 
+with unique pronunciation challenges. They suggest that AI-driven tutoring systems can 
+personalise the learning process by targeting individual needs. Chen, Chen, and Lin (2020) similarly 
+noted that personalised and adaptive learning pathways supported by AI are essential to maximise 
+student outcomes. Without these resources, learners are unable to concentrate on their individual 
+pronunciation issues. Because general language learning tools do not cater to the needs of 
+individual learners, particularly when it comes to mastering complex sounds and pronunciation 
+patterns, this leads to frustration and slow progress. 
+Page | 3 
+IPB49804: BSE FYP1 PROPOSAL FORM 
+OCTOBER 2025 
+Page | 4 
+ 
+ 
+ 
+ 
+ 
+4.  Lack of Exposure to Authentic Speaking Environments 
+Learners usually have limited opportunities to practise Bahasa Melayu in natural, conversational 
+contexts. Learners who have not been exposed to authentic dialogues, cultural expressions, or 
+real-life circumstances may struggle to use correct pronunciation effectively during actual 
+communication. Lo et al. (2025) acknowledged that while Duolingo supports pronunciation and 
+listening practice, it still falls short in providing authentic conversational settings, which are 
+essential for real-world communication. On the other hand, Nowawi and Ahmad (2023) showed 
+that interactive multimedia apps for Malay learning expose learners to cultural expressions and 
+natural contexts, helping them apply language skills more effectively outside the classroom. 
+IPB49804: BSE FYP1 PROPOSAL FORM 
+OCTOBER 2025 
+Proposed Solution 
+Outline the solution you propose to implement. Include any technology stack (tools, 
+programming languages & frameworks), and methodologies that will be used. 
+Learners find it challenging to pronounce Malay words correctly and confidently, especially those 
+unfamiliar with the language’s unique phonemes, such as ng, ny, and kh. To address these 
+challenges, this project proposes BMoris — an AI-powered Malay learning platform that is 
+available on both mobile and web platforms. The system integrates advanced technologies to 
+enhance language learning through: 
+1. Real-time pronunciation feedback with phoneme-level scoring. 
+2. A bilingual AI tutor for conversation and translation between Malay and English. 
+3. Adaptive learning which automatically adjusts lesson difficulty based on learner performance. 
+4. Gamified learning features such as experience points (XP), streaks, badges, and leaderboards. 
+5. Additional support for offline access and accessibility features, ensuring inclusivity for 
+all learners. 
+We use OpenAI (ChatGPT) as our main AI model to power conversation and language 
+understanding in BMoris. The effectiveness of the app will be evaluated through regular user 
+satisfaction surveys to measure how well it meets users’ needs and expectations, while 
+continuous feedback will be collected through an in-app feedback system that allows users to 
+share comments, report issues, and suggest improvements directly. BMoris ensures accuracy by 
+using verified content from the MIIT syllabus, expert review, and controlled AI prompts. Ethical 
+measures include data privacy, user consent, cultural sensitivity, and transparency in AI
+generated responses.  
+The app will provide interactive assessments such as quizzes, pronunciation tests, and practice 
+exercises to measure user progress. User performance will be tracked automatically through 
+scores and completion rates, and displayed on a personal dashboard showing their progress, 
+achievements, and areas that need improvement. 
+Technology Stack (Tools, Languages & Frameworks) -The application will be developed in Android. - Programming Languages: 
+☐ Frontend: Dart (app) 
+☐ Backend: Python, Node.js 
+• Database: SQL Supabase PostgreSQL,Firebase 
+• Version control: GitHub 
+• Prototyping: Figma 
+Page | 5 
+IPB49804: BSE FYP1 PROPOSAL FORM 
+OCTOBER 2025 
+Methodology – Agile Methodology (Scrum) 
+We used Agile Scrum to manage our project development in short sprints, ensuring continuous 
+progress and feedback. Meanwhile, our architecture follows a DevOps approach - integrating 
+code, testing, deployment, and monitoring — so the BMoris app can be updated quickly and 
+safely whenever we make improvements. 
+The workflow is organized as follows: 
+1. Sprint Planning 
+Define key objectives and features for each sprint based on project priorities. 
+2. Development Iterations 
+Implement features incrementally, starting with the core system modules — authentication, ASR 
+feedback, adaptive learning engine, and teacher dashboard. 
+3. Testing, Feedback & Refinement 
+Gather feedback from test users to evaluate usability, pronunciation accuracy, and learning 
+experience. 
+4. Final Optimization & Deployment 
+Conduct final performance tuning, bug fixing, and accessibility checks. Ensure the platform is 
+stable, secure, and optimized before deployment on both mobile and web platforms. 
+Page | 6 
+IPB49804: BSE FYP1 PROPOSAL FORM 
+OCTOBER 2025 
+Page | 7 
+☐Approved 
+Supervisor’s Feedback and Approval (To be completed by 
+supervisor) 
+Feedback 
+Proposal Approval 
+☐Requires Revisions
+Supervisor Signature: 
+ Date: 24th Oct 2025 

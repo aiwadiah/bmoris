@@ -1,0 +1,242 @@
+[
+  {
+    "question": "What does 'Selamat pagi' mean?",
+    "questionMalay": "Apa maksud 'Selamat pagi'?",
+    "options": ["Good morning", "Good night", "Good afternoon", "Goodbye"],
+    "correctIndex": 0,
+    "difficulty": 1,
+    "category": "Greetings"
+  },
+  {
+    "question": "How do you say 'Thank you' in Malay?",
+    "questionMalay": "Bagaimana nak cakap 'Thank you' dalam Bahasa Melayu?",
+    "options": ["Sama-sama", "Terima kasih", "Maaf", "Tolong"],
+    "correctIndex": 1,
+    "difficulty": 1,
+    "category": "Greetings"
+  },
+  {
+    "question": "What is the Malay word for 'Water'?",
+    "questionMalay": "Apa perkataan Melayu untuk 'Water'?",
+    "options": ["Nasi", "Air", "Teh", "Kopi"],
+    "correctIndex": 1,
+    "difficulty": 1,
+    "category": "Food"
+  },
+  {
+    "question": "Which number is 'Lima'?",
+    "questionMalay": "Nombor berapa 'Lima'?",
+    "options": ["Three", "Four", "Five", "Six"],
+    "correctIndex": 2,
+    "difficulty": 1,
+    "category": "Numbers"
+  },
+  {
+    "question": "What does 'Ibu' mean?",
+    "questionMalay": "Apa maksud 'Ibu'?",
+    "options": ["Father", "Mother", "Sister", "Brother"],
+    "correctIndex": 1,
+    "difficulty": 1,
+    "category": "Family"
+  },
+  {
+    "question": "How do you say 'Yes' in Malay?",
+    "questionMalay": "Bagaimana nak cakap 'Yes' dalam Bahasa Melayu?",
+    "options": ["Tidak", "Ya", "Maaf", "Tolong"],
+    "correctIndex": 1,
+    "difficulty": 1,
+    "category": "Basics"
+  },
+  {
+    "question": "What is 'Merah' in English?",
+    "questionMalay": "Apa 'Merah' dalam Bahasa Inggeris?",
+    "options": ["Blue", "Red", "Yellow", "Green"],
+    "correctIndex": 1,
+    "difficulty": 1,
+    "category": "Colors"
+  },
+  {
+    "question": "What does 'Apa khabar?' mean?",
+    "questionMalay": "Apa maksud 'Apa khabar?'",
+    "options": ["Goodbye", "Thank you", "How are you?", "Good morning"],
+    "correctIndex": 2,
+    "difficulty": 2,
+    "category": "Greetings"
+  },
+  {
+    "question": "Which day is 'Isnin'?",
+    "questionMalay": "Hari apa 'Isnin'?",
+    "options": ["Sunday", "Monday", "Tuesday", "Wednesday"],
+    "correctIndex": 1,
+    "difficulty": 2,
+    "category": "Time"
+  },
+  {
+    "question": "What is the Malay word for 'Older brother'?",
+    "questionMalay": "Apa perkataan Melayu untuk 'Older brother'?",
+    "options": ["Adik", "Abang", "Kakak", "Bapa"],
+    "correctIndex": 1,
+    "difficulty": 2,
+    "category": "Family"
+  },
+  {
+    "question": "How do you say 'Sorry' in Malay?",
+    "questionMalay": "Bagaimana nak cakap 'Sorry' dalam Bahasa Melayu?",
+    "options": ["Terima kasih", "Tolong", "Maaf", "Ya"],
+    "correctIndex": 2,
+    "difficulty": 2,
+    "category": "Greetings"
+  },
+  {
+    "question": "What is 'Tujuh' in English?",
+    "questionMalay": "Apa 'Tujuh' dalam Bahasa Inggeris?",
+    "options": ["Six", "Seven", "Eight", "Nine"],
+    "correctIndex": 1,
+    "difficulty": 2,
+    "category": "Numbers"
+  },
+  {
+    "question": "Which color is 'Hijau'?",
+    "questionMalay": "Warna apa 'Hijau'?",
+    "options": ["Red", "Blue", "Green", "Yellow"],
+    "correctIndex": 2,
+    "difficulty": 2,
+    "category": "Colors"
+  },
+  {
+    "question": "What does 'Nasi' mean?",
+    "questionMalay": "Apa maksud 'Nasi'?",
+    "options": ["Bread", "Rice", "Water", "Coffee"],
+    "correctIndex": 1,
+    "difficulty": 2,
+    "category": "Food"
+  },
+  {
+    "question": "What is the response to 'Terima kasih'?",
+    "questionMalay": "Apa jawapan untuk 'Terima kasih'?",
+    "options": ["Maaf", "Sama-sama", "Tolong", "Ya"],
+    "correctIndex": 1,
+    "difficulty": 3,
+    "category": "Greetings"
+  },
+  {
+    "question": "Which day is 'Jumaat'?",
+    "questionMalay": "Hari apa 'Jumaat'?",
+    "options": ["Thursday", "Friday", "Saturday", "Sunday"],
+    "correctIndex": 1,
+    "difficulty": 3,
+    "category": "Time"
+  },
+  {
+    "question": "What does 'Berapa harga ini?' mean?",
+    "questionMalay": "Apa maksud 'Berapa harga ini?'",
+    "options": ["How are you?", "How much is this?", "What is this?", "Where is this?"],
+    "correctIndex": 1,
+    "difficulty": 3,
+    "category": "Shopping"
+  },
+  {
+    "question": "What is 'Grandmother' in Malay?",
+    "questionMalay": "Apa 'Grandmother' dalam Bahasa Melayu?",
+    "options": ["Ibu", "Kakak", "Nenek", "Adik"],
+    "correctIndex": 2,
+    "difficulty": 3,
+    "category": "Family"
+  },
+  {
+    "question": "How do you say 'Chicken' in Malay?",
+    "questionMalay": "Bagaimana nak cakap 'Chicken' dalam Bahasa Melayu?",
+    "options": ["Ikan", "Ayam", "Roti", "Nasi"],
+    "correctIndex": 1,
+    "difficulty": 3,
+    "category": "Food"
+  },
+  {
+    "question": "What is 'Sembilan' in English?",
+    "questionMalay": "Apa 'Sembilan' dalam Bahasa Inggeris?",
+    "options": ["Seven", "Eight", "Nine", "Ten"],
+    "correctIndex": 2,
+    "difficulty": 3,
+    "category": "Numbers"
+  },
+  {
+    "question": "What does 'Terlalu mahal' mean?",
+    "questionMalay": "Apa maksud 'Terlalu mahal'?",
+    "options": ["Too cheap", "Too expensive", "Very good", "Very bad"],
+    "correctIndex": 1,
+    "difficulty": 4,
+    "category": "Shopping"
+  },
+  {
+    "question": "Which day is 'Rabu'?",
+    "questionMalay": "Hari apa 'Rabu'?",
+    "options": ["Monday", "Tuesday", "Wednesday", "Thursday"],
+    "correctIndex": 2,
+    "difficulty": 4,
+    "category": "Time"
+  },
+  {
+    "question": "What does 'Saya mahu beli' mean?",
+    "questionMalay": "Apa maksud 'Saya mahu beli'?",
+    "options": ["I want to sell", "I want to buy", "I want to eat", "I want to go"],
+    "correctIndex": 1,
+    "difficulty": 4,
+    "category": "Shopping"
+  },
+  {
+    "question": "What is 'Grandfather' in Malay?",
+    "questionMalay": "Apa 'Grandfather' dalam Bahasa Melayu?",
+    "options": ["Bapa", "Abang", "Datuk", "Adik"],
+    "correctIndex": 2,
+    "difficulty": 4,
+    "category": "Family"
+  },
+  {
+    "question": "How do you say 'Fish' in Malay?",
+    "questionMalay": "Bagaimana nak cakap 'Fish' dalam Bahasa Melayu?",
+    "options": ["Ayam", "Ikan", "Air", "Roti"],
+    "correctIndex": 1,
+    "difficulty": 4,
+    "category": "Food"
+  },
+  {
+    "question": "What does 'Boleh kurang?' mean?",
+    "questionMalay": "Apa maksud 'Boleh kurang?'",
+    "options": ["Can I help?", "Can you reduce the price?", "Can I go?", "Can you wait?"],
+    "correctIndex": 1,
+    "difficulty": 5,
+    "category": "Shopping"
+  },
+  {
+    "question": "Which day is 'Khamis'?",
+    "questionMalay": "Hari apa 'Khamis'?",
+    "options": ["Tuesday", "Wednesday", "Thursday", "Friday"],
+    "correctIndex": 2,
+    "difficulty": 5,
+    "category": "Time"
+  },
+  {
+    "question": "What is 'Younger sibling' in Malay?",
+    "questionMalay": "Apa 'Younger sibling' dalam Bahasa Melayu?",
+    "options": ["Abang", "Kakak", "Adik", "Ibu"],
+    "correctIndex": 2,
+    "difficulty": 5,
+    "category": "Family"
+  },
+  {
+    "question": "What does 'Selamat petang' mean?",
+    "questionMalay": "Apa maksud 'Selamat petang'?",
+    "options": ["Good morning", "Good afternoon", "Good evening", "Good night"],
+    "correctIndex": 1,
+    "difficulty": 5,
+    "category": "Greetings"
+  },
+  {
+    "question": "What is 'Sepuluh' in English?",
+    "questionMalay": "Apa 'Sepuluh' dalam Bahasa Inggeris?",
+    "options": ["Eight", "Nine", "Ten", "Eleven"],
+    "correctIndex": 2,
+    "difficulty": 5,
+    "category": "Numbers"
+  }
+]

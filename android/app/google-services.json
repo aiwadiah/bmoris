@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "94172327212",
+    "project_id": "bmoris-55fdb",
+    "storage_bucket": "bmoris-55fdb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:94172327212:android:e52a8544d2d5458c565089",
+        "android_client_info": {
+          "package_name": "com.company.bmoris"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDu1Fn7ZrI2-BIN0MT1zm6ZaqP_GXuMGoU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
