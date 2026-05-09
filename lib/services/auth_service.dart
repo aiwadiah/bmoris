@@ -185,4 +185,22 @@ class AuthService {
       'badges': FieldValue.arrayUnion([badge]),
     });
   }
+
+  Future<void> updateDailyGoal(String uid, {int? count, String? date, int? target}) async {
+    final updates = <String, dynamic>{};
+    if (count != null) updates['dailyActivitiesCount'] = count;
+    if (date != null) updates['lastActivityDate'] = date;
+    if (target != null) updates['dailyGoalTarget'] = target;
+
+    if (updates.isNotEmpty) {
+      await _firestore.collection('users').doc(uid).update(updates);
+    }
+  }
+
+  Future<void> incrementActivityCount(String uid) async {
+    await _firestore.collection('users').doc(uid).update({
+      'dailyActivitiesCount': FieldValue.increment(1),
+      'lastActivityDate': DateTime.now().toIso8601String().split('T')[0],
+    });
+  }
 }

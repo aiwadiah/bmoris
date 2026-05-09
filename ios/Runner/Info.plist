@@ -45,5 +45,13 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Kami memerlukan akses mikrofon untuk latihan sebutan anda.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Kami memerlukan akses pengecaman suara untuk menganalisis sebutan anda.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Kami memerlukan akses kamera untuk mengambil gambar profil anda.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Kami memerlukan akses galeri untuk memilih gambar profil anda.</string>
 </dict>
 </plist>

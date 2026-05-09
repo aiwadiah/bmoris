@@ -96,10 +96,10 @@ class FirestoreService {
     await _firestore.collection('quiz_attempts').add(attempt.toMap());
   }
 
-  Future<List<QuizAttempt>> getUserQuizAttempts(String oderId) async {
+  Future<List<QuizAttempt>> getUserQuizAttempts(String userId) async {
     final snapshot = await _firestore
         .collection('quiz_attempts')
-        .where('userId', isEqualTo: oderId)
+        .where('userId', isEqualTo: userId)
         .orderBy('attemptedAt', descending: true)
         .get();
     return snapshot.docs
@@ -112,10 +112,10 @@ class FirestoreService {
     await _firestore.collection('pronunciation_attempts').add(attempt.toMap());
   }
 
-  Future<List<PronunciationAttempt>> getUserPronunciationHistory(String oderId) async {
+  Future<List<PronunciationAttempt>> getUserPronunciationHistory(String userId) async {
     final snapshot = await _firestore
         .collection('pronunciation_attempts')
-        .where('userId', isEqualTo: oderId)
+        .where('userId', isEqualTo: userId)
         .orderBy('attemptedAt', descending: true)
         .limit(50)
         .get();

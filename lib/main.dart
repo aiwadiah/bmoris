@@ -35,6 +35,7 @@ import 'screen/admin/manage_quizzes_screen.dart';
 import 'screen/admin/manage_users_screen.dart';
 import 'screen/admin/manage_ai_prompts_screen.dart';
 import 'services/notification_service.dart';
+import 'screen/edit_profile_screen.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -81,8 +82,9 @@ class BMorisApp extends StatelessWidget {
           '/': (context) => const SplashScreen(),
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
-          '/home': (context) => const HomeScreen(),
+          '/home': (context) => HomeScreen(),
           '/profile': (context) => const ProfileScreen(),
+          '/edit-profile': (context) => const EditProfileScreen(),
           '/practice': (context) => const PronunciationScreen(),
           '/chat': (context) => const ChatbotScreen(),
           '/lessons': (context) => const LessonScreen(),

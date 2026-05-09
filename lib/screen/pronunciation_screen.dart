@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../providers/auth_provider.dart';
@@ -150,6 +151,7 @@ class _PronunciationScreenState extends State<PronunciationScreen> {
     // Save to Firestore
     if (userId.isNotEmpty) {
       await _firestoreService.savePronunciationAttempt(attempt);
+      await authProvider.incrementActivityCount();
 
       // Award XP based on score
       if (_accuracyScore >= 0.8) {
@@ -187,15 +189,58 @@ class _PronunciationScreenState extends State<PronunciationScreen> {
     await _speechService.speak(_phrases[_currentPhraseIndex]['malay']!);
   }
 
+  void _resetPhrase() {
+    setState(() {
+      _feedbackText = 'Press the mic to start speaking.';
+      _spokenText = '';
+      _accuracyScore = 0.0;
+      _resultLabel = '';
+      _phonemeAnalysis = [];
+    });
+  }
+
+  Widget _buildWaveform({bool isLeft = true}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(6, (index) {
+        // Create a pattern of heights: 10, 20, 15, 25, 12, 18
+        final heights = isLeft 
+          ? [8.0, 16.0, 12.0, 24.0, 10.0, 14.0]
+          : [14.0, 10.0, 24.0, 12.0, 16.0, 8.0];
+        
+        return Container(
+          width: 3,
+          height: heights[index % heights.length],
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          decoration: BoxDecoration(
+            color: const Color(0xFF00897B).withValues(alpha: _isRecording ? 0.6 : 0.2),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        );
+      }),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentPhrase = _phrases[_currentPhraseIndex];
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('Pronunciation Practice'),
-        backgroundColor: const Color(0xFF00796B),
-        foregroundColor: Colors.white,
+        automaticallyImplyLeading: false,
+        title: Text(
+          'Pronunciation Practice',
+          style: GoogleFonts.poppins(
+            color: const Color(0xFF00897B),
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF00897B),
+        elevation: 0,
+        centerTitle: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.history),
@@ -203,260 +248,239 @@ class _PronunciationScreenState extends State<PronunciationScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              // Progress Indicator
-              Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(_phrases.length, (index) {
-                return Container(
-                  width: 8,
-                  height: 8,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: index == _currentPhraseIndex
-                        ? const Color(0xFF00796B)
-                        : Colors.grey.shade300,
-                  ),
-                );
-              }),
-            ),
-            const SizedBox(height: 20),
-
-            // Navigation Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  onPressed: _previousPhrase,
-                  icon: const Icon(Icons.arrow_back_ios),
-                  color: const Color(0xFF00796B),
-                ),
-                Text(
-                  '${_currentPhraseIndex + 1} / ${_phrases.length}',
-                  style: const TextStyle(color: Colors.grey),
-                ),
-                IconButton(
-                  onPressed: _nextPhrase,
-                  icon: const Icon(Icons.arrow_forward_ios),
-                  color: const Color(0xFF00796B),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 40),
-
-            // Target Phrase
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: const Color(0xFF00796B).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-              ),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20.0),
               child: Column(
                 children: [
-                  Text(
-                    currentPhrase['malay']!,
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF00796B),
-                    ),
-                    textAlign: TextAlign.center,
+                  // Progress Indicator
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(_phrases.length, (index) {
+                      return Container(
+                        width: 8,
+                        height: 8,
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: index == _currentPhraseIndex
+                              ? Colors.blue
+                              : Colors.grey.shade300,
+                        ),
+                      );
+                    }),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    currentPhrase['english']!,
-                    style: const TextStyle(fontSize: 18, color: Colors.grey),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton.icon(
-                    onPressed: _speakPhrase,
-                    icon: const Icon(Icons.volume_up),
-                    label: const Text('Listen'),
-                  ),
-                ],
-              ),
-            ),
+                  const SizedBox(height: 32),
 
-            const SizedBox(height: 40),
-
-            // Spoken Text
-            if (_spokenText.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.mic, color: Colors.blue),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'You said: "$_spokenText"',
-                        style: const TextStyle(color: Colors.blue),
-                      ),
+                  // Blue Container (Practice Area)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 32),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.03), // even lighter blue
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.blue.shade50, width: 2),
                     ),
-                  ],
-                ),
-              ),
-
-            // AI Feedback Section with Mascot
-            Container(
-              padding: const EdgeInsets.all(16),
-              width: double.infinity,
-              constraints: const BoxConstraints(
-                maxHeight: 300, // Limit max height
-              ),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    // Show mascot based on accuracy
-                    if (_accuracyScore > 0)
-                      Image.asset(
-                        _accuracyScore >= 0.8
-                            ? 'assets/dodoHappy.png'
-                            : 'assets/dodoSad.png',
-                        width: 60,
-                        height: 60,
-                      ),
-                    if (_accuracyScore > 0) const SizedBox(height: 8),
-                    Text(
-                      'AI Feedback:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _feedbackText,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                    const SizedBox(height: 10),
-                    if (_accuracyScore > 0)
-                      Column(
-                        children: [
-                          const Text('Accuracy Score'),
-                          const SizedBox(height: 8),
-                          LinearProgressIndicator(
-                            value: _accuracyScore,
-                            minHeight: 10,
-                            backgroundColor: Colors.grey.shade300,
-                            color:
-                                _accuracyScore >= 0.8 ? Colors.green : Colors.orange,
-                            borderRadius: BorderRadius.circular(5),
+                    child: Column(
+                      children: [
+                        Text(
+                          currentPhrase['malay']!,
+                          style: GoogleFonts.poppins(
+                            fontSize: 36, // even bigger
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${(_accuracyScore * 100).toInt()}%',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: _accuracyScore >= 0.8
-                                  ? Colors.green
-                                  : Colors.orange,
-                            ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          currentPhrase['english']!,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            color: Colors.grey,
                           ),
-                          const SizedBox(height: 8),
-                          if (_resultLabel.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: _resultLabel == 'Great'
-                                    ? Colors.green.shade50
-                                    : _resultLabel == 'Good'
-                                        ? Colors.orange.shade50
-                                        : Colors.red.shade50,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                'Sounds like $_resultLabel',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: _resultLabel == 'Great'
-                                      ? Colors.green
-                                      : _resultLabel == 'Good'
-                                          ? Colors.orange
-                                          : Colors.red,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
+                        IconButton(
+                          onPressed: _speakPhrase,
+                          icon: const Icon(Icons.volume_up, color: Color(0xFF00897B)),
+                          tooltip: 'Listen',
+                        ),
+                        const SizedBox(height: 24),
+                        // Mic Button with Waveforms
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildWaveform(isLeft: true),
+                            const SizedBox(width: 20),
+                            GestureDetector(
+                              onTap: _toggleRecording,
+                              child: Container(
+                                height: 90,
+                                width: 90,
+                                decoration: BoxDecoration(
+                                  color: _isRecording ? Colors.red : const Color(0xFF00897B),
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF00897B).withValues(alpha: 0.2),
+                                      blurRadius: 15,
+                                      spreadRadius: 5,
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  _isRecording ? Icons.stop : Icons.mic,
+                                  color: Colors.white,
+                                  size: 40,
                                 ),
                               ),
                             ),
-                        ],
-                      ),
-                  if (_phonemeAnalysis.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _phonemeAnalysis.map((p) {
-                        return Chip(
-                          avatar: Icon(
-                            p.isCorrect ? Icons.check : Icons.close,
-                            color: p.isCorrect ? Colors.green : Colors.red,
-                            size: 16,
+                            const SizedBox(width: 20),
+                            _buildWaveform(isLeft: false),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _isRecording ? 'Listening...' : 'Tap to speak',
+                          style: GoogleFonts.poppins(
+                            color: const Color(0xFF00897B),
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
                           ),
-                          label: Text(p.phoneme),
-                          backgroundColor: p.isCorrect
-                              ? Colors.green.shade50
-                              : Colors.red.shade50,
-                        );
-                      }).toList(),
+                        ),
+                      ],
                     ),
-                  ],
-                  ],
-                ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // AI Feedback Section
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.grey.shade100),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 10,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        if (_accuracyScore > 0)
+                          Image.asset(
+                            _accuracyScore >= 0.8
+                                ? 'assets/dodoHappy.png'
+                                : 'assets/dodoSad.png',
+                            width: 70,
+                            height: 70,
+                          ),
+                        if (_accuracyScore > 0) const SizedBox(height: 16),
+                        Text(
+                          'AI Feedback',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _feedbackText,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: Colors.black54,
+                          ),
+                        ),
+                        if (_accuracyScore > 0) ...[
+                          const SizedBox(height: 20),
+                          LinearProgressIndicator(
+                            value: _accuracyScore,
+                            minHeight: 12,
+                            backgroundColor: Colors.grey.shade100,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              _accuracyScore >= 0.8 ? Colors.green : Colors.orange,
+                            ),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '${(_accuracyScore * 100).toInt()}% Accuracy',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                              color: _accuracyScore >= 0.8 ? Colors.green : Colors.orange,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
-
-            const SizedBox(height: 40),
-
-            // Recording Button
-            GestureDetector(
-              onTap: _toggleRecording,
-              child: Container(
-                height: 80,
-                width: 80,
-                decoration: BoxDecoration(
-                  color: _isRecording ? Colors.red : const Color(0xFF00796B),
-                  shape: BoxShape.circle,
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 10,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  _isRecording ? Icons.stop : Icons.mic,
-                  color: Colors.white,
-                  size: 40,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              _isRecording ? 'Tap to Stop' : 'Tap to Record',
-              style: const TextStyle(color: Colors.grey),
-            ),
-              const SizedBox(height: 20),
-            ],
           ),
-        ),
+          // Bottom Navigation Buttons
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _resetPhrase,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      side: BorderSide(color: Colors.grey.shade300),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      'Try Again',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _nextPhrase,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00897B),
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'Next',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

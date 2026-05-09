@@ -4,7 +4,7 @@ import 'firestore_service.dart';
 
 class AIService {
   static const String _apiKey = 'AIzaSyAJwvH5pKzspL7H6EOksRpWgm6wv4z_OP0';
-  static const String _modelName = 'gemini-2.5-flash';
+  static const String _modelName = 'gemini-1.5-flash';
 
   final FirestoreService _firestoreService = FirestoreService();
   final List<Map<String, dynamic>> _chatHistory = [];
@@ -153,7 +153,7 @@ Please check console for full details.''';
         return data['candidates'][0]['content']['parts'][0]['text'] ??
             'Translation failed.';
       } else {
-        return 'Translation error. Please try again.';
+        return 'Translation error (${response.statusCode}). Please try again.';
       }
     } catch (e) {
       return 'Translation error. Please try again.';
