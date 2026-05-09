@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/lesson_provider.dart';
 import '../providers/auth_provider.dart';
@@ -25,10 +26,21 @@ class _LessonScreenState extends State<LessonScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('Lessons'),
-        backgroundColor: const Color(0xFF00796B),
-        foregroundColor: Colors.white,
+        automaticallyImplyLeading: false,
+        title: Text(
+          'Lessons',
+          style: GoogleFonts.poppins(
+            color: const Color(0xFF00897B),
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF00897B),
+        elevation: 0,
+        centerTitle: false,
       ),
       body: Consumer<LessonProvider>(
         builder: (context, lessonProvider, _) {
@@ -51,28 +63,40 @@ class _LessonScreenState extends State<LessonScreen> {
             children: [
               // Category Filter
               SizedBox(
-                height: 50,
+                height: 60,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   itemCount: categories.length,
                   itemBuilder: (context, index) {
                     final category = categories[index];
                     final isSelected = _selectedCategory == category;
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
-                      child: FilterChip(
+                      child: ChoiceChip(
                         label: Text(category),
                         selected: isSelected,
                         onSelected: (selected) {
-                          setState(() {
-                            _selectedCategory = category;
-                          });
+                          if (selected) {
+                            setState(() {
+                              _selectedCategory = category;
+                            });
+                          }
                         },
-                        selectedColor: const Color(0xFF00796B),
-                        labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black,
+                        selectedColor: const Color(0xFF00897B),
+                        labelStyle: GoogleFonts.poppins(
+                          color: isSelected ? Colors.white : Colors.black87,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                          fontSize: 13,
                         ),
+                        backgroundColor: Colors.grey.shade50,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        side: BorderSide(
+                          color: isSelected ? const Color(0xFF00897B) : Colors.grey.shade200,
+                        ),
+                        showCheckmark: false,
                       ),
                     );
                   },
@@ -123,100 +147,118 @@ class _LessonScreenState extends State<LessonScreen> {
   }
 
   Widget _buildLessonCard(BuildContext context, LessonModel lesson) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () => _openLesson(context, lesson),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF00796B).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200, width: 1.5),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _openLesson(context, lesson),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF00897B).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.book_rounded, color: Color(0xFF00897B)),
                     ),
-                    child: const Icon(Icons.book, color: Color(0xFF00796B)),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          lesson.title,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            lesson.title,
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
                           ),
-                        ),
+                          Text(
+                            lesson.titleMalay,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      children: [
+                        _buildDifficultyBadge(lesson.difficulty),
+                        const SizedBox(height: 4),
                         Text(
-                          lesson.titleMalay,
+                          '+${lesson.xpReward} XP',
                           style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
+                            fontSize: 12,
+                            color: Colors.amber,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  lesson.description,
+                  style: GoogleFonts.poppins(
+                    color: Colors.grey.shade600,
+                    fontSize: 13,
                   ),
-                  Column(
-                    children: [
-                      _buildDifficultyBadge(lesson.difficulty),
-                      const SizedBox(height: 4),
-                      Text(
-                        '+${lesson.xpReward} XP',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.amber,
-                          fontWeight: FontWeight.bold,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        lesson.category,
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: Colors.blue.shade700,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                lesson.description,
-                style: const TextStyle(color: Colors.grey),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Chip(
-                    label: Text(lesson.category),
-                    backgroundColor: Colors.blue.shade50,
-                    labelStyle: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue.shade700,
                     ),
-                  ),
-                  const Spacer(),
-                  FutureBuilder<bool>(
-                    future: Provider.of<LessonProvider>(context, listen: false)
-                        .isLessonOffline(lesson.id),
-                    builder: (context, snapshot) {
-                      if (snapshot.data == true) {
-                        return const Icon(Icons.download_done,
-                            color: Colors.green, size: 20);
-                      }
-                      return IconButton(
-                        icon: const Icon(Icons.download_outlined, size: 20),
-                        onPressed: () => _downloadLesson(context, lesson),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ],
+                    const Spacer(),
+                    FutureBuilder<bool>(
+                      future: Provider.of<LessonProvider>(context, listen: false)
+                          .isLessonOffline(lesson.id),
+                      builder: (context, snapshot) {
+                        if (snapshot.data == true) {
+                          return const Icon(Icons.cloud_done_rounded,
+                              color: Color(0xFF00897B), size: 20);
+                        }
+                        return Icon(Icons.download_rounded,
+                            color: Colors.grey.shade400, size: 20);
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -447,7 +489,20 @@ class _LessonDetailSheetState extends State<_LessonDetailSheet> {
                     _currentIndex--;
                   });
                 },
-                child: const Text('Previous'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 56),
+                  side: const BorderSide(color: Color(0xFF00897B)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'Previous',
+                  style: GoogleFonts.poppins(
+                    color: const Color(0xFF00897B),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
           if (_currentIndex > 0) const SizedBox(width: 12),
@@ -463,13 +518,22 @@ class _LessonDetailSheetState extends State<_LessonDetailSheet> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00796B),
+                backgroundColor: const Color(0xFF00897B),
+                minimumSize: const Size(double.infinity, 56),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
               ),
               child: Text(
                 _currentIndex < widget.lesson.contents.length - 1
                     ? 'Next'
                     : 'Complete',
-                style: const TextStyle(color: Colors.white),
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
           ),
@@ -481,6 +545,7 @@ class _LessonDetailSheetState extends State<_LessonDetailSheet> {
   void _completeLesson() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await authProvider.addXp(widget.lesson.xpReward);
+    await authProvider.incrementActivityCount();
 
     if (mounted) {
       Navigator.pop(context);

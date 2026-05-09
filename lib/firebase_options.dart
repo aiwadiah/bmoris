@@ -46,7 +46,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '94172327212',
     projectId: 'bmoris-55fdb',
     storageBucket: 'bmoris-55fdb.firebasestorage.app',
-    iosBundleId: 'com.company.bmoris',
+    iosBundleId: 'com.example.bmoris',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -55,7 +55,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '94172327212',
     projectId: 'bmoris-55fdb',
     storageBucket: 'bmoris-55fdb.firebasestorage.app',
-    iosBundleId: 'com.company.bmoris',
+    iosBundleId: 'com.example.bmoris',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

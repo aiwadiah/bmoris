@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../models/quiz_model.dart';
+import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
 import '../services/firestore_service.dart';
+import '../models/quiz_model.dart';
 
 class QuizHistoryScreen extends StatefulWidget {
   const QuizHistoryScreen({super.key});
@@ -15,10 +16,10 @@ class QuizHistoryScreen extends StatefulWidget {
 class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   List<QuizAttempt> _attempts = [];
-  Map<String, QuizModel> _quizById = {};
+  List<QuizAttempt> _filteredAttempts = [];
   bool _isLoading = true;
-  int? _selectedDifficulty;
-  String? _selectedCategory;
+  int? _levelFilter;
+  String? _categoryFilter;
 
   @override
   void initState() {
@@ -27,241 +28,249 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
   }
 
   Future<void> _loadHistory() async {
-    setState(() => _isLoading = true);
-
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final user = authProvider.user;
-
-      if (user != null) {
-        final quizzes = await _firestoreService.getQuizzes();
-        final attempts = await _firestoreService.getUserQuizAttempts(user.uid);
-
-        _quizById = {
-          for (final quiz in quizzes) quiz.id: quiz,
-        };
-        _attempts = attempts;
-      } else {
-        _attempts = [];
-        _quizById = {};
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userId = authProvider.user?.uid;
+    
+    if (userId != null) {
+      try {
+        final snapshot = await _firestoreService.firestore.collection('quiz_attempts').get();
+        final allAttempts = snapshot.docs
+            .map((doc) => QuizAttempt.fromMap(doc.data(), doc.id))
+            .toList();
+        
+        final myAttempts = allAttempts.where((a) => a.userId == userId).toList();
+        
+        myAttempts.sort((a, b) => b.attemptedAt.compareTo(a.attemptedAt));
+        
+        setState(() {
+          _attempts = myAttempts;
+          _filteredAttempts = myAttempts;
+          _isLoading = false;
+        });
+      } catch (e) {
+        setState(() => _isLoading = false);
       }
-    } catch (_) {
-      _attempts = [];
-      _quizById = {};
+    } else {
+      setState(() => _isLoading = false);
     }
-
-    setState(() => _isLoading = false);
   }
 
-  List<QuizAttempt> get _filteredAttempts {
-    return _attempts.where((attempt) {
-      final quiz = _quizById[attempt.quizId];
-      if (quiz == null) return false;
-      final matchesDifficulty =
-          _selectedDifficulty == null || quiz.difficulty == _selectedDifficulty;
-      final matchesCategory =
-          _selectedCategory == null || quiz.category == _selectedCategory;
-      return matchesDifficulty && matchesCategory;
-    }).toList();
-  }
-
-  List<int> get _availableLevels {
-    final levels = _quizById.values.map((quiz) => quiz.difficulty).toSet().toList();
-    levels.sort();
-    return levels;
-  }
-
-  List<String> get _availableCategories {
-    final categories = _quizById.values.map((quiz) => quiz.category).toSet().toList();
-    categories.sort();
-    return categories;
+  void _applyFilters() {
+    setState(() {
+      _filteredAttempts = _attempts.where((attempt) {
+        final matchesLevel = _levelFilter == null || attempt.difficulty == _levelFilter;
+        final matchesCategory = _categoryFilter == null || attempt.category == _categoryFilter;
+        return matchesLevel && matchesCategory;
+      }).toList();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final attempts = _filteredAttempts;
-
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('Quiz History'),
-        backgroundColor: const Color(0xFF00796B),
-        foregroundColor: Colors.white,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadHistory,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _buildSummaryCard(attempts),
-                  const SizedBox(height: 16),
-                  _buildFilterRow(),
-                  const SizedBox(height: 16),
-                  if (attempts.isEmpty)
-                    _buildEmptyState()
-                  else
-                    ...attempts.map(_buildAttemptCard),
-                ],
-              ),
-            ),
-    );
-  }
-
-  Widget _buildSummaryCard(List<QuizAttempt> attempts) {
-    final correct = attempts.where((a) => a.isCorrect).length;
-    final accuracy = attempts.isNotEmpty ? (correct / attempts.length) * 100 : 0.0;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Expanded(child: _buildStat('Attempts', '${attempts.length}')),
-            Expanded(child: _buildStat('Correct', '$correct')),
-            Expanded(child: _buildStat('Accuracy', '${accuracy.toStringAsFixed(0)}%')),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStat(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(color: Colors.grey)),
-      ],
-    );
-  }
-
-  Widget _buildFilterRow() {
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: [
-        SizedBox(
-          width: 160,
-          child: DropdownButtonFormField<int?>(
-            value: _selectedDifficulty,
-            decoration: const InputDecoration(
-              labelText: 'Level',
-              border: OutlineInputBorder(),
-            ),
-            items: [
-              const DropdownMenuItem<int?>(
-                value: null,
-                child: Text('All'),
-              ),
-              ..._availableLevels.map(
-                (level) => DropdownMenuItem<int?>(
-                  value: level,
-                  child: Text('Level $level'),
-                ),
-              ),
-            ],
-            onChanged: (value) => setState(() => _selectedDifficulty = value),
+        title: Text(
+          'Quiz History',
+          style: GoogleFonts.poppins(
+            color: const Color(0xFF00897B),
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
           ),
         ),
-        SizedBox(
-          width: 180,
-          child: DropdownButtonFormField<String?>(
-            value: _selectedCategory,
-            decoration: const InputDecoration(
-              labelText: 'Content',
-              border: OutlineInputBorder(),
-            ),
-            items: [
-              const DropdownMenuItem<String?>(
-                value: null,
-                child: Text('All'),
-              ),
-              ..._availableCategories.map(
-                (category) => DropdownMenuItem<String?>(
-                  value: category,
-                  child: Text(category),
-                ),
-              ),
-            ],
-            onChanged: (value) => setState(() => _selectedCategory = value),
-          ),
-        ),
-        TextButton(
-          onPressed: (_selectedDifficulty == null && _selectedCategory == null)
-              ? null
-              : () {
-                  setState(() {
-                    _selectedDifficulty = null;
-                    _selectedCategory = null;
-                  });
-                },
-          child: const Text('Clear filters'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 48),
-      child: Column(
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF00897B),
+        elevation: 0,
+        centerTitle: true,
+      ),
+      body: Column(
         children: [
-          Icon(Icons.history_toggle_off, size: 72, color: Colors.grey.shade400),
-          const SizedBox(height: 12),
-          const Text(
-            'No quiz history',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Quiz attempts will appear here after the user completes quizzes.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey),
+          _buildFilters(),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredAttempts.isEmpty
+                    ? _buildEmptyState()
+                    : _buildHistoryList(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAttemptCard(QuizAttempt attempt) {
-    final quiz = _quizById[attempt.quizId];
-    if (quiz == null) return const SizedBox.shrink();
+  Widget _buildFilters() {
+    final categories = _attempts.map((a) => a.category).toSet().toList()..sort();
 
-    final selectedAnswer = attempt.selectedIndex < quiz.options.length
-        ? quiz.options[attempt.selectedIndex]
-        : 'Unknown';
-    final correctAnswer = quiz.correctIndex < quiz.options.length
-        ? quiz.options[quiz.correctIndex]
-        : 'Unknown';
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: attempt.isCorrect ? Colors.green : Colors.red,
-          child: Icon(
-            attempt.isCorrect ? Icons.check : Icons.close,
-            color: Colors.white,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
-        ),
-        title: Text(quiz.questionMalay),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text('Content: ${quiz.category}'),
-            Text('Level: ${quiz.difficulty}'),
-            Text('Selected: $selectedAnswer'),
-            Text('Correct: $correctAnswer'),
-            const SizedBox(height: 4),
-            Text(DateFormat('MMM d, yyyy h:mm a').format(attempt.attemptedAt)),
-          ],
-        ),
-        isThreeLine: true,
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: DropdownButtonFormField<int>(
+              value: _levelFilter,
+              decoration: InputDecoration(
+                labelText: 'Level',
+                labelStyle: GoogleFonts.poppins(fontSize: 12),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              items: [
+                const DropdownMenuItem(value: null, child: Text('All Levels')),
+                ...List.generate(5, (i) => i + 1).map((l) => 
+                  DropdownMenuItem(value: l, child: Text('Level $l'))
+                ),
+              ],
+              onChanged: (val) {
+                setState(() => _levelFilter = val);
+                _applyFilters();
+              },
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              value: _categoryFilter,
+              decoration: InputDecoration(
+                labelText: 'Content',
+                labelStyle: GoogleFonts.poppins(fontSize: 12),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              items: [
+                const DropdownMenuItem(value: null, child: Text('All Content')),
+                ...categories.map((c) => 
+                  DropdownMenuItem(value: c, child: Text(c))
+                ),
+              ],
+              onChanged: (val) {
+                setState(() => _categoryFilter = val);
+                _applyFilters();
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryList() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _filteredAttempts.length,
+      itemBuilder: (context, index) {
+        final attempt = _filteredAttempts[index];
+        final dateStr = DateFormat('MMM dd, hh:mm a').format(attempt.attemptedAt);
+        
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            leading: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: attempt.isCorrect ? Colors.green.shade50 : Colors.red.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                attempt.isCorrect ? Icons.check_circle : Icons.cancel,
+                color: attempt.isCorrect ? Colors.green : Colors.red,
+                size: 24,
+              ),
+            ),
+            title: Text(
+              attempt.category,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                Text(
+                  'Level ${attempt.difficulty} • $dateStr',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: attempt.isCorrect ? Colors.green.shade100 : Colors.red.shade100,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                attempt.isCorrect ? 'Correct' : 'Incorrect',
+                style: GoogleFonts.poppins(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: attempt.isCorrect ? Colors.green.shade800 : Colors.red.shade800,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.history, size: 64, color: Colors.grey.shade300),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'No quiz history found',
+            style: GoogleFonts.poppins(
+              color: Colors.black87,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Start a quiz to see your progress here!',
+            style: GoogleFonts.poppins(
+              color: Colors.grey,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Consumer<AuthProvider>(
+            builder: (context, auth, _) => Text(
+              'User: ${auth.user?.name ?? "Unknown"} (${_attempts.length} records found)',
+              style: const TextStyle(fontSize: 10, color: Colors.grey),
+            ),
+          ),
+        ],
       ),
     );
   }

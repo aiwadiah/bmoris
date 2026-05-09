@@ -4,13 +4,16 @@ class UserModel {
   final String name;
   final String? phoneNumber;
   final String? photoUrl;
-  final String role; // 'user' or 'admin'
+  final String role;
   final int xp;
   final int streak;
   final List<String> badges;
   final int currentLevel;
   final DateTime createdAt;
   final DateTime lastLoginAt;
+  final int dailyGoalTarget;
+  final int dailyActivitiesCount;
+  final String lastActivityDate;
 
   UserModel({
     required this.uid,
@@ -25,6 +28,9 @@ class UserModel {
     this.currentLevel = 1,
     required this.createdAt,
     required this.lastLoginAt,
+    this.dailyGoalTarget = 5,
+    this.dailyActivitiesCount = 0,
+    this.lastActivityDate = '',
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map, String uid) {
@@ -41,6 +47,9 @@ class UserModel {
       currentLevel: map['currentLevel'] ?? 1,
       createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
       lastLoginAt: DateTime.parse(map['lastLoginAt'] ?? DateTime.now().toIso8601String()),
+      dailyGoalTarget: map['dailyGoalTarget'] ?? 5,
+      dailyActivitiesCount: map['dailyActivitiesCount'] ?? 0,
+      lastActivityDate: map['lastActivityDate'] ?? '',
     );
   }
 
@@ -57,6 +66,9 @@ class UserModel {
       'currentLevel': currentLevel,
       'createdAt': createdAt.toIso8601String(),
       'lastLoginAt': lastLoginAt.toIso8601String(),
+      'dailyGoalTarget': dailyGoalTarget,
+      'dailyActivitiesCount': dailyActivitiesCount,
+      'lastActivityDate': lastActivityDate,
     };
   }
 
@@ -73,6 +85,9 @@ class UserModel {
     int? currentLevel,
     DateTime? createdAt,
     DateTime? lastLoginAt,
+    int? dailyGoalTarget,
+    int? dailyActivitiesCount,
+    String? lastActivityDate,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -87,6 +102,9 @@ class UserModel {
       currentLevel: currentLevel ?? this.currentLevel,
       createdAt: createdAt ?? this.createdAt,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
+      dailyGoalTarget: dailyGoalTarget ?? this.dailyGoalTarget,
+      dailyActivitiesCount: dailyActivitiesCount ?? this.dailyActivitiesCount,
+      lastActivityDate: lastActivityDate ?? this.lastActivityDate,
     );
   }
 

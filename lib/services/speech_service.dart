@@ -227,7 +227,7 @@ class SpeechService {
 
     return PronunciationAttempt(
       id: '',
-      oderId: userId,
+      userId: userId,
       targetText: targetText,
       spokenText: spokenText,
       accuracyScore: accuracyScore,
@@ -295,7 +295,7 @@ class SpeechService {
 
     return PronunciationAttempt(
       id: '',
-      oderId: userId,
+      userId: userId,
       targetText: targetText,
       spokenText: spokenText,
       accuracyScore: accuracyScore,

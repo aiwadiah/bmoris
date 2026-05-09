@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
@@ -18,6 +19,30 @@ class _PronunciationHistoryScreenState
   final FirestoreService _firestoreService = FirestoreService();
   List<PronunciationAttempt> _attempts = [];
   bool _isLoading = true;
+  String _selectedFilter = 'All';
+
+  List<PronunciationAttempt> get _filteredAttempts {
+    if (_selectedFilter == 'All') return _attempts;
+
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+
+    if (_selectedFilter == 'Today') {
+      return _attempts.where((a) => a.attemptedAt.isAfter(todayStart)).toList();
+    }
+
+    if (_selectedFilter == 'Last 7 Days') {
+      final weekStart = todayStart.subtract(const Duration(days: 7));
+      return _attempts.where((a) => a.attemptedAt.isAfter(weekStart)).toList();
+    }
+
+    if (_selectedFilter == 'Last 30 Days') {
+      final monthStart = todayStart.subtract(const Duration(days: 30));
+      return _attempts.where((a) => a.attemptedAt.isAfter(monthStart)).toList();
+    }
+
+    return _attempts;
+  }
 
   @override
   void initState() {
@@ -46,16 +71,84 @@ class _PronunciationHistoryScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Pronunciation History'),
-        backgroundColor: const Color(0xFF00796B),
-        foregroundColor: Colors.white,
+        title: Text(
+          'Pronunciation History',
+          style: GoogleFonts.poppins(
+            color: const Color(0xFF00897B),
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF00897B),
+        elevation: 0,
+        centerTitle: false,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _attempts.isEmpty
-              ? _buildEmptyState()
-              : _buildHistoryList(),
+      body: Column(
+        children: [
+          _buildFilters(),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredAttempts.isEmpty
+                    ? _buildEmptyState()
+                    : _buildHistoryList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilters() {
+    final filters = ['All', 'Today', 'Last 7 Days', 'Last 30 Days'];
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade100, width: 1),
+        ),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: filters.map((filter) {
+            final isSelected = _selectedFilter == filter;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ChoiceChip(
+                label: Text(filter),
+                selected: isSelected,
+                onSelected: (selected) {
+                  if (selected) {
+                    setState(() => _selectedFilter = filter);
+                  }
+                },
+                selectedColor: const Color(0xFF00897B),
+                labelStyle: GoogleFonts.poppins(
+                  color: isSelected ? Colors.white : Colors.black87,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  fontSize: 13,
+                ),
+                backgroundColor: Colors.grey.shade50,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                side: BorderSide(
+                  color: isSelected ? const Color(0xFF00897B) : Colors.grey.shade200,
+                  width: 1,
+                ),
+                showCheckmark: false,
+                elevation: isSelected ? 2 : 0,
+              ),
+            );
+          }).toList(),
+        ),
+      ),
     );
   }
 
@@ -95,7 +188,7 @@ class _PronunciationHistoryScreenState
   Widget _buildHistoryList() {
     // Group by date
     final groupedAttempts = <String, List<PronunciationAttempt>>{};
-    for (var attempt in _attempts) {
+    for (var attempt in _filteredAttempts) {
       final dateKey = DateFormat('MMM d, yyyy').format(attempt.attemptedAt);
       groupedAttempts.putIfAbsent(dateKey, () => []).add(attempt);
     }
@@ -137,11 +230,24 @@ class _PronunciationHistoryScreenState
             ? Colors.orange
             : Colors.red;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () => _showAttemptDetail(attempt),
-        borderRadius: BorderRadius.circular(12),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showAttemptDetail(attempt),
+          borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -197,8 +303,9 @@ class _PronunciationHistoryScreenState
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _showAttemptDetail(PronunciationAttempt attempt) {
     showModalBottomSheet(

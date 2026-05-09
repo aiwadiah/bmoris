@@ -23,6 +23,9 @@ class AuthProvider extends ChangeNotifier {
     _authService.authStateChanges.listen((User? firebaseUser) async {
       if (firebaseUser != null) {
         _user = await _authService.getUserById(firebaseUser.uid);
+        if (_user != null) {
+          await _checkAndResetDailyGoal();
+        }
         notifyListeners();
       } else {
         _user = null;
@@ -131,7 +134,31 @@ class AuthProvider extends ChangeNotifier {
   Future<void> refreshUser() async {
     if (_authService.currentUser != null) {
       _user = await _authService.getUserById(_authService.currentUser!.uid);
+      if (_user != null) {
+        await _checkAndResetDailyGoal();
+      }
       notifyListeners();
+    }
+  }
+
+  Future<void> _checkAndResetDailyGoal() async {
+    if (_user == null) return;
+
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    if (_user!.lastActivityDate != today) {
+      await _authService.updateDailyGoal(
+        _user!.uid,
+        count: 0,
+        date: today,
+      );
+      _user = _user!.copyWith(dailyActivitiesCount: 0, lastActivityDate: today);
+    }
+  }
+
+  Future<void> incrementActivityCount() async {
+    if (_user != null) {
+      await _authService.incrementActivityCount(_user!.uid);
+      await refreshUser();
     }
   }
 
