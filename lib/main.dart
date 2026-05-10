@@ -34,14 +34,14 @@ import 'screen/admin/manage_lessons_screen.dart';
 import 'screen/admin/manage_quizzes_screen.dart';
 import 'screen/admin/manage_users_screen.dart';
 import 'screen/admin/manage_ai_prompts_screen.dart';
+import 'screen/admin/admin_feedback_view_screen.dart';
+import 'screen/admin/admin_feedback_management_screen.dart';
 import 'services/notification_service.dart';
 import 'screen/edit_profile_screen.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 }
 
 void main() async {
@@ -49,9 +49,7 @@ void main() async {
   if (!kIsWeb) {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   }
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const BMorisApp());
   if (!kIsWeb) {
     NotificationService.initialize();
@@ -93,19 +91,24 @@ class BMorisApp extends StatelessWidget {
           '/offline-lessons': (context) => const OfflineLessonsScreen(),
           '/translate': (context) => const TranslationScreen(),
           '/feedback': (context) => const FeedbackScreen(),
-          '/pronunciation-history': (context) => const PronunciationHistoryScreen(),
+          '/pronunciation-history':
+              (context) => const PronunciationHistoryScreen(),
           '/quiz-history': (context) => const QuizHistoryScreen(),
           '/notifications': (context) => const NotificationsScreen(),
           '/admin-register': (context) => const AdminRegisterScreen(),
           '/admin': (context) => const AdminDashboardScreen(),
           '/admin/profile': (context) => const AdminProfileScreen(),
           '/admin/phonemes': (context) => const ManagePhonemesScreen(),
-          '/admin/announcements': (context) => const ManageAnnouncementsScreen(),
+          '/admin/announcements':
+              (context) => const ManageAnnouncementsScreen(),
           '/admin/data': (context) => const DataManagementScreen(),
           '/admin/lessons': (context) => const ManageLessonsScreen(),
           '/admin/quizzes': (context) => const ManageQuizzesScreen(),
           '/admin/users': (context) => const ManageUsersScreen(),
           '/admin/ai-prompts': (context) => const ManageAIPromptsScreen(),
+          '/admin/feedback/view': (context) => const AdminFeedbackViewScreen(),
+          '/admin/feedback/manage':
+              (context) => const AdminFeedbackManagementScreen(),
         },
       ),
     );
