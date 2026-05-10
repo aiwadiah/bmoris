@@ -182,14 +182,21 @@ class FirestoreService {
   }
 
   Future<List<AnnouncementModel>> getActiveAnnouncements() async {
-    final snapshot = await _firestore
-        .collection('announcements')
-        .where('isActive', isEqualTo: true)
-        .orderBy('createdAt', descending: true)
-        .get();
-    return snapshot.docs
-        .map((doc) => AnnouncementModel.fromMap(doc.data(), doc.id))
-        .toList();
+    final announcements = await getAnnouncements();
+    final now = DateTime.now();
+
+    return announcements.where((announcement) {
+      if (!announcement.isActive) {
+        return false;
+      }
+
+      if (announcement.expiresAt != null &&
+          announcement.expiresAt!.isBefore(now)) {
+        return false;
+      }
+
+      return true;
+    }).toList();
   }
 
   Future<void> createAnnouncement(AnnouncementModel announcement) async {

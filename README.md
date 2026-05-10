@@ -103,6 +103,15 @@ service cloud.firestore {
 flutter run
 ```
 
+## Notifications Behavior
+
+- The in-app Notifications page reads Firestore `announcements`
+- Creating a new active announcement should:
+  - create the inbox item in Firestore
+  - appear on Home under `Latest Announcements`
+  - appear on the Notifications page
+- Editing an announcement updates the in-app announcement content
+
 ## Creating Admin Account
 
 To create an admin account, register normally then update the user document in Firestore:
