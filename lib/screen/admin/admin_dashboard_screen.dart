@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
@@ -20,8 +19,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   List<UserModel> _users = [];
   List<FeedbackModel> _feedbacks = [];
   bool _isLoading = true;
-  int? _feedbackRatingFilter;
-  DateTimeRange? _feedbackDateRange;
 
   @override
   void initState() {
@@ -43,159 +40,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     setState(() => _isLoading = false);
   }
 
-  List<FeedbackModel> get _filteredFeedbacks {
-    return _feedbacks.where((feedback) {
-      final matchesRating =
-          _feedbackRatingFilter == null || feedback.rating == _feedbackRatingFilter;
-      final matchesStart = _feedbackDateRange == null ||
-          !feedback.createdAt.isBefore(_feedbackDateRange!.start);
-      final matchesEnd = _feedbackDateRange == null ||
-          !feedback.createdAt.isAfter(
-            _feedbackDateRange!.end.add(const Duration(days: 1)),
-          );
-      return matchesRating && matchesStart && matchesEnd;
-    }).toList();
-  }
-
-  Future<void> _pickFeedbackDateRange() async {
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      initialDateRange: _feedbackDateRange,
-    );
-    if (picked != null) {
-      setState(() => _feedbackDateRange = picked);
-    }
-  }
-
-  Future<void> _clearFeedbackFilters() async {
-    setState(() {
-      _feedbackRatingFilter = null;
-      _feedbackDateRange = null;
-    });
-  }
-
-  Future<Map<String, String>?> _showFeedbackResponseDialog(
-    FeedbackModel feedback,
-  ) async {
-    final responseController =
-        TextEditingController(text: feedback.adminResponse ?? '');
-    String selectedStatus =
-        feedback.status == 'resolved' ? 'resolved' : 'reviewed';
-
-    final result = await showDialog<Map<String, String>>(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return AlertDialog(
-              title: const Text('Respond to Feedback'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: responseController,
-                      maxLines: 4,
-                      decoration: const InputDecoration(
-                        labelText: 'Response',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: selectedStatus,
-                      decoration: const InputDecoration(
-                        labelText: 'Status',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'reviewed', child: Text('Reviewed')),
-                        DropdownMenuItem(value: 'resolved', child: Text('Resolved')),
-                      ],
-                      onChanged: (value) {
-                        if (value != null) {
-                          setModalState(() => selectedStatus = value);
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context, {
-                      'status': selectedStatus,
-                      'response': responseController.text.trim(),
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00796B),
-                  ),
-                  child: const Text('Save', style: TextStyle(color: Colors.white)),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    responseController.dispose();
-    return result;
-  }
-
-  Future<void> _respondToFeedback(FeedbackModel feedback) async {
-    final result = await _showFeedbackResponseDialog(feedback);
-    if (result == null) return;
-
-    try {
-      await _firestoreService.respondToFeedback(
-        feedback.id,
-        status: result['status'] ?? 'reviewed',
-        response: result['response'] ?? '',
-      );
-      await _loadData();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error responding to feedback: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _deleteFeedback(String id) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Feedback'),
-        content: const Text('Are you sure you want to delete this feedback?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      await _firestoreService.deleteFeedback(id);
-      await _loadData();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -204,10 +48,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         backgroundColor: const Color(0xFF00796B),
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadData,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
           IconButton(
             icon: const Icon(Icons.person),
             onPressed: () {
@@ -217,25 +58,29 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await Provider.of<AuthProvider>(context, listen: false).signOut();
-              if (mounted) {
-                Navigator.pushReplacementNamed(context, '/login');
-              }
+              final authProvider = Provider.of<AuthProvider>(
+                context,
+                listen: false,
+              );
+              await authProvider.signOut();
+              if (!context.mounted) return;
+              Navigator.of(context).pushReplacementNamed('/login');
             },
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : IndexedStack(
-              index: _selectedIndex,
-              children: [
-                _buildOverview(),
-                _buildUserManagement(),
-                _buildFeedbackManagement(),
-                _buildContentManagement(),
-              ],
-            ),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : IndexedStack(
+                index: _selectedIndex,
+                children: [
+                  _buildOverview(),
+                  _buildUserManagement(),
+                  _buildFeedbackManagement(),
+                  _buildContentManagement(),
+                ],
+              ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
@@ -247,18 +92,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             icon: Icon(Icons.dashboard),
             label: 'Overview',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Users',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Users'),
           BottomNavigationBarItem(
             icon: Icon(Icons.feedback),
             label: 'Feedback',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.book),
-            label: 'Content',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Content'),
         ],
       ),
     );
@@ -327,27 +166,36 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
             )
           else
-            ..._feedbacks.take(5).map((feedback) => Card(
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: _getStatusColor(feedback.status),
-                      child: Icon(
-                        _getStatusIcon(feedback.status),
-                        color: Colors.white,
-                        size: 20,
+            ..._feedbacks
+                .take(5)
+                .map(
+                  (feedback) => Card(
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: _getStatusColor(feedback.status),
+                        child: Icon(
+                          _getStatusIcon(feedback.status),
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
+                      title: Text(feedback.subject),
+                      subtitle: Text(feedback.userName),
+                      trailing: Text(feedback.status),
                     ),
-                    title: Text(feedback.subject),
-                    subtitle: Text(feedback.userName),
-                    trailing: Text(feedback.status),
                   ),
-                )),
+                ),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -417,9 +265,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           user.role,
                           style: const TextStyle(fontSize: 12),
                         ),
-                        backgroundColor: user.isAdmin
-                            ? Colors.red.shade100
-                            : Colors.blue.shade100,
+                        backgroundColor:
+                            user.isAdmin
+                                ? Colors.red.shade100
+                                : Colors.blue.shade100,
                       ),
                       const SizedBox(width: 8),
                       Text('${user.xp} XP'),
@@ -435,197 +284,68 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildFeedbackManagement() {
-    final feedbacks = _filteredFeedbacks;
+    final pendingCount =
+        _feedbacks.where((feedback) => feedback.status == 'pending').length;
+    final respondedCount = _feedbacks.length - pendingCount;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              const Text(
-                'User Feedback',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const Spacer(),
-              Text('${feedbacks.length} feedbacks'),
-            ],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Feedback Tools',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Wrap(
-            spacing: 12,
-            runSpacing: 12,
+          const SizedBox(height: 8),
+          Text(
+            '${_feedbacks.length} total feedbacks',
+            style: const TextStyle(color: Colors.grey),
+          ),
+          const SizedBox(height: 16),
+          Row(
             children: [
-              SizedBox(
-                width: 150,
-                child: DropdownButtonFormField<int?>(
-                  value: _feedbackRatingFilter,
-                  decoration: const InputDecoration(
-                    labelText: 'Rating',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: const [
-                    DropdownMenuItem<int?>(
-                      value: null,
-                      child: Text('All'),
-                    ),
-                    DropdownMenuItem(value: 5, child: Text('5 stars')),
-                    DropdownMenuItem(value: 4, child: Text('4 stars')),
-                    DropdownMenuItem(value: 3, child: Text('3 stars')),
-                    DropdownMenuItem(value: 2, child: Text('2 stars')),
-                    DropdownMenuItem(value: 1, child: Text('1 star')),
-                  ],
-                  onChanged: (value) => setState(() => _feedbackRatingFilter = value),
+              Expanded(
+                child: _buildStatCard(
+                  'Pending',
+                  '$pendingCount',
+                  Icons.pending_actions,
+                  Colors.orange,
                 ),
               ),
-              OutlinedButton.icon(
-                onPressed: _pickFeedbackDateRange,
-                icon: const Icon(Icons.date_range),
-                label: Text(
-                  _feedbackDateRange == null
-                      ? 'Date range'
-                      : '${DateFormat('MMM d').format(_feedbackDateRange!.start)} - ${DateFormat('MMM d').format(_feedbackDateRange!.end)}',
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  'Responded',
+                  '$respondedCount',
+                  Icons.check_circle,
+                  Colors.green,
                 ),
-              ),
-              TextButton(
-                onPressed: (_feedbackRatingFilter == null && _feedbackDateRange == null)
-                    ? null
-                    : _clearFeedbackFilters,
-                child: const Text('Clear'),
               ),
             ],
           ),
-        ),
-        const SizedBox(height: 12),
-        Expanded(
-          child: feedbacks.isEmpty
-              ? const Center(child: Text('No feedback yet'))
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: feedbacks.length,
-                  itemBuilder: (context, index) {
-                    final feedback = feedbacks[index];
-                    return Card(
-                      child: ExpansionTile(
-                        leading: CircleAvatar(
-                          backgroundColor: _getStatusColor(feedback.status),
-                          child: Icon(
-                            _getStatusIcon(feedback.status),
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                        title: Text(feedback.subject),
-                        subtitle: Text('From: ${feedback.userName} | ${feedback.rating}/5'),
-                        trailing: Chip(
-                          label: Text(
-                            feedback.status,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ),
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Message:',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(feedback.message),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: List.generate(
-                                    5,
-                                    (starIndex) => Icon(
-                                      starIndex < feedback.rating
-                                          ? Icons.star
-                                          : Icons.star_border,
-                                      color: Colors.amber,
-                                      size: 18,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                if (feedback.status == 'pending')
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          onPressed: () => _respondToFeedback(feedback),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.blue,
-                                          ),
-                                          child: const Text('Respond',
-                                              style: TextStyle(color: Colors.white)),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: OutlinedButton(
-                                          onPressed: () => _deleteFeedback(feedback.id),
-                                          style: OutlinedButton.styleFrom(
-                                            foregroundColor: Colors.red,
-                                          ),
-                                          child: const Text('Delete'),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                if (feedback.status != 'pending') ...[
-                                  const SizedBox(height: 12),
-                                  if (feedback.adminResponse != null &&
-                                      feedback.adminResponse!.isNotEmpty)
-                                    Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.green.shade50,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text('Response: ${feedback.adminResponse}'),
-                                    ),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          onPressed: () => _respondToFeedback(feedback),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.blue,
-                                          ),
-                                          child: const Text('Edit Response',
-                                              style: TextStyle(color: Colors.white)),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: OutlinedButton(
-                                          onPressed: () => _deleteFeedback(feedback.id),
-                                          style: OutlinedButton.styleFrom(
-                                            foregroundColor: Colors.red,
-                                          ),
-                                          child: const Text('Delete'),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-        ),
-      ],
+          const SizedBox(height: 24),
+          _buildManagementCard(
+            'Feedback View',
+            'Filter by rating and date, then open detailed feedback pages.',
+            Icons.visibility,
+            Colors.blue,
+            () {
+              Navigator.pushNamed(context, '/admin/feedback/view');
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildManagementCard(
+            'Feedback Management',
+            'Respond to user feedback and delete records from one page.',
+            Icons.feedback,
+            Colors.deepOrange,
+            () {
+              Navigator.pushNamed(context, '/admin/feedback/manage');
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -783,5 +503,4 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         return Icons.help;
     }
   }
-
 }
