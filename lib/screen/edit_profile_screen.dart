@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/bmoris_back_button.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -45,7 +46,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       // Update name and phone
       await authProvider.updateProfile(
         name: _nameController.text.trim(),
-        phoneNumber: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+        phoneNumber:
+            _phoneController.text.trim().isEmpty
+                ? null
+                : _phoneController.text.trim(),
       );
 
       // Update email if changed
@@ -62,7 +66,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update profile: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Failed to update profile: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -75,7 +82,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: Text('Edit Profile', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        leading: const BMorisBackButton(),
+        title: Text(
+          'Edit Profile',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: const Color(0xFF00796B),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -96,7 +107,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               _buildTextField(
                 controller: _nameController,
                 label: 'Full Name',
@@ -104,7 +115,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 validator: (v) => v!.isEmpty ? 'Name is required' : null,
               ),
               const SizedBox(height: 16),
-              
+
               _buildTextField(
                 controller: _emailController,
                 label: 'Email Address',
@@ -113,7 +124,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 validator: (v) => !v!.contains('@') ? 'Invalid email' : null,
               ),
               const SizedBox(height: 16),
-              
+
               _buildTextField(
                 controller: _phoneController,
                 label: 'Phone Number',
@@ -121,7 +132,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 40),
-              
+
               SizedBox(
                 width: double.infinity,
                 height: 55,
@@ -130,12 +141,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00796B),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     elevation: 2,
                   ),
-                  child: _isSaving
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : Text('Save Changes', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child:
+                      _isSaving
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                            'Save Changes',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                 ),
               ),
             ],

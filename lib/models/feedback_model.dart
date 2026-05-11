@@ -3,6 +3,7 @@ class FeedbackModel {
   final String oderId;
   final String userName;
   final String subject;
+  final String category;
   final String message;
   final int rating;
   final String status; // 'pending', 'reviewed', 'resolved'
@@ -15,6 +16,7 @@ class FeedbackModel {
     required this.oderId,
     required this.userName,
     required this.subject,
+    this.category = 'General',
     required this.message,
     this.rating = 5,
     this.status = 'pending',
@@ -29,14 +31,21 @@ class FeedbackModel {
       oderId: map['userId'] ?? '',
       userName: map['userName'] ?? '',
       subject: map['subject'] ?? '',
+      category: map['category'] ?? 'General',
       message: map['message'] ?? '',
-      rating: map['rating'] is num
-          ? (map['rating'] as num).toInt()
-          : int.tryParse('${map['rating']}') ?? 5,
+      rating:
+          map['rating'] is num
+              ? (map['rating'] as num).toInt()
+              : int.tryParse('${map['rating']}') ?? 5,
       status: map['status'] ?? 'pending',
       adminResponse: map['adminResponse'],
-      createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
-      respondedAt: map['respondedAt'] != null ? DateTime.parse(map['respondedAt']) : null,
+      createdAt: DateTime.parse(
+        map['createdAt'] ?? DateTime.now().toIso8601String(),
+      ),
+      respondedAt:
+          map['respondedAt'] != null
+              ? DateTime.parse(map['respondedAt'])
+              : null,
     );
   }
 
@@ -45,6 +54,7 @@ class FeedbackModel {
       'userId': oderId,
       'userName': userName,
       'subject': subject,
+      'category': category,
       'message': message,
       'rating': rating,
       'status': status,

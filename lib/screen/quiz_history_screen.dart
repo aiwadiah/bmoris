@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
 import '../services/firestore_service.dart';
 import '../models/quiz_model.dart';
+import '../widgets/bmoris_back_button.dart';
 
 class QuizHistoryScreen extends StatefulWidget {
   const QuizHistoryScreen({super.key});
@@ -30,18 +31,21 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
   Future<void> _loadHistory() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userId = authProvider.user?.uid;
-    
+
     if (userId != null) {
       try {
-        final snapshot = await _firestoreService.firestore.collection('quiz_attempts').get();
-        final allAttempts = snapshot.docs
-            .map((doc) => QuizAttempt.fromMap(doc.data(), doc.id))
-            .toList();
-        
-        final myAttempts = allAttempts.where((a) => a.userId == userId).toList();
-        
+        final snapshot =
+            await _firestoreService.firestore.collection('quiz_attempts').get();
+        final allAttempts =
+            snapshot.docs
+                .map((doc) => QuizAttempt.fromMap(doc.data(), doc.id))
+                .toList();
+
+        final myAttempts =
+            allAttempts.where((a) => a.userId == userId).toList();
+
         myAttempts.sort((a, b) => b.attemptedAt.compareTo(a.attemptedAt));
-        
+
         setState(() {
           _attempts = myAttempts;
           _filteredAttempts = myAttempts;
@@ -57,11 +61,14 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
 
   void _applyFilters() {
     setState(() {
-      _filteredAttempts = _attempts.where((attempt) {
-        final matchesLevel = _levelFilter == null || attempt.difficulty == _levelFilter;
-        final matchesCategory = _categoryFilter == null || attempt.category == _categoryFilter;
-        return matchesLevel && matchesCategory;
-      }).toList();
+      _filteredAttempts =
+          _attempts.where((attempt) {
+            final matchesLevel =
+                _levelFilter == null || attempt.difficulty == _levelFilter;
+            final matchesCategory =
+                _categoryFilter == null || attempt.category == _categoryFilter;
+            return matchesLevel && matchesCategory;
+          }).toList();
     });
   }
 
@@ -70,6 +77,7 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
+        leading: const BMorisBackButton(),
         title: Text(
           'Quiz History',
           style: GoogleFonts.poppins(
@@ -87,9 +95,10 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
         children: [
           _buildFilters(),
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredAttempts.isEmpty
+            child:
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _filteredAttempts.isEmpty
                     ? _buildEmptyState()
                     : _buildHistoryList(),
           ),
@@ -99,7 +108,8 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
   }
 
   Widget _buildFilters() {
-    final categories = _attempts.map((a) => a.category).toSet().toList()..sort();
+    final categories =
+        _attempts.map((a) => a.category).toSet().toList()..sort();
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -121,13 +131,18 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
               decoration: InputDecoration(
                 labelText: 'Level',
                 labelStyle: GoogleFonts.poppins(fontSize: 12),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               items: [
                 const DropdownMenuItem(value: null, child: Text('All Levels')),
-                ...List.generate(5, (i) => i + 1).map((l) => 
-                  DropdownMenuItem(value: l, child: Text('Level $l'))
+                ...List.generate(5, (i) => i + 1).map(
+                  (l) => DropdownMenuItem(value: l, child: Text('Level $l')),
                 ),
               ],
               onChanged: (val) {
@@ -143,13 +158,18 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
               decoration: InputDecoration(
                 labelText: 'Content',
                 labelStyle: GoogleFonts.poppins(fontSize: 12),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               items: [
                 const DropdownMenuItem(value: null, child: Text('All Content')),
-                ...categories.map((c) => 
-                  DropdownMenuItem(value: c, child: Text(c))
+                ...categories.map(
+                  (c) => DropdownMenuItem(value: c, child: Text(c)),
                 ),
               ],
               onChanged: (val) {
@@ -169,8 +189,10 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
       itemCount: _filteredAttempts.length,
       itemBuilder: (context, index) {
         final attempt = _filteredAttempts[index];
-        final dateStr = DateFormat('MMM dd, hh:mm a').format(attempt.attemptedAt);
-        
+        final dateStr = DateFormat(
+          'MMM dd, hh:mm a',
+        ).format(attempt.attemptedAt);
+
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
@@ -179,11 +201,17 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
             border: Border.all(color: Colors.grey.shade200),
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
             leading: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: attempt.isCorrect ? Colors.green.shade50 : Colors.red.shade50,
+                color:
+                    attempt.isCorrect
+                        ? Colors.green.shade50
+                        : Colors.red.shade50,
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -215,7 +243,10 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
             trailing: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: attempt.isCorrect ? Colors.green.shade100 : Colors.red.shade100,
+                color:
+                    attempt.isCorrect
+                        ? Colors.green.shade100
+                        : Colors.red.shade100,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -223,7 +254,10 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: attempt.isCorrect ? Colors.green.shade800 : Colors.red.shade800,
+                  color:
+                      attempt.isCorrect
+                          ? Colors.green.shade800
+                          : Colors.red.shade800,
                 ),
               ),
             ),
@@ -258,17 +292,15 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
           const SizedBox(height: 8),
           Text(
             'Start a quiz to see your progress here!',
-            style: GoogleFonts.poppins(
-              color: Colors.grey,
-              fontSize: 14,
-            ),
+            style: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
           ),
           const SizedBox(height: 16),
           Consumer<AuthProvider>(
-            builder: (context, auth, _) => Text(
-              'User: ${auth.user?.name ?? "Unknown"} (${_attempts.length} records found)',
-              style: const TextStyle(fontSize: 10, color: Colors.grey),
-            ),
+            builder:
+                (context, auth, _) => Text(
+                  'User: ${auth.user?.name ?? "Unknown"} (${_attempts.length} records found)',
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                ),
           ),
         ],
       ),

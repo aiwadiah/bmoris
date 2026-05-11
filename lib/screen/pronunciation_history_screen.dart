@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
 import '../models/pronunciation_model.dart';
 import '../services/firestore_service.dart';
+import '../widgets/bmoris_back_button.dart';
 
 class PronunciationHistoryScreen extends StatefulWidget {
   const PronunciationHistoryScreen({super.key});
@@ -58,8 +59,9 @@ class _PronunciationHistoryScreenState
       final user = authProvider.user;
 
       if (user != null) {
-        _attempts =
-            await _firestoreService.getUserPronunciationHistory(user.uid);
+        _attempts = await _firestoreService.getUserPronunciationHistory(
+          user.uid,
+        );
       }
     } catch (e) {
       // Handle error
@@ -73,6 +75,7 @@ class _PronunciationHistoryScreenState
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        leading: const BMorisBackButton(),
         title: Text(
           'Pronunciation History',
           style: GoogleFonts.poppins(
@@ -90,9 +93,10 @@ class _PronunciationHistoryScreenState
         children: [
           _buildFilters(),
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredAttempts.isEmpty
+            child:
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _filteredAttempts.isEmpty
                     ? _buildEmptyState()
                     : _buildHistoryList(),
           ),
@@ -116,37 +120,42 @@ class _PronunciationHistoryScreenState
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
-          children: filters.map((filter) {
-            final isSelected = _selectedFilter == filter;
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: ChoiceChip(
-                label: Text(filter),
-                selected: isSelected,
-                onSelected: (selected) {
-                  if (selected) {
-                    setState(() => _selectedFilter = filter);
-                  }
-                },
-                selectedColor: const Color(0xFF00897B),
-                labelStyle: GoogleFonts.poppins(
-                  color: isSelected ? Colors.white : Colors.black87,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  fontSize: 13,
-                ),
-                backgroundColor: Colors.grey.shade50,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                side: BorderSide(
-                  color: isSelected ? const Color(0xFF00897B) : Colors.grey.shade200,
-                  width: 1,
-                ),
-                showCheckmark: false,
-                elevation: isSelected ? 2 : 0,
-              ),
-            );
-          }).toList(),
+          children:
+              filters.map((filter) {
+                final isSelected = _selectedFilter == filter;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(filter),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() => _selectedFilter = filter);
+                      }
+                    },
+                    selectedColor: const Color(0xFF00897B),
+                    labelStyle: GoogleFonts.poppins(
+                      color: isSelected ? Colors.white : Colors.black87,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
+                      fontSize: 13,
+                    ),
+                    backgroundColor: Colors.grey.shade50,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    side: BorderSide(
+                      color:
+                          isSelected
+                              ? const Color(0xFF00897B)
+                              : Colors.grey.shade200,
+                      width: 1,
+                    ),
+                    showCheckmark: false,
+                    elevation: isSelected ? 2 : 0,
+                  ),
+                );
+              }).toList(),
         ),
       ),
     );
@@ -224,9 +233,10 @@ class _PronunciationHistoryScreenState
   }
 
   Widget _buildAttemptCard(PronunciationAttempt attempt) {
-    final scoreColor = attempt.accuracyScore >= 0.8
-        ? Colors.green
-        : attempt.accuracyScore >= 0.5
+    final scoreColor =
+        attempt.accuracyScore >= 0.8
+            ? Colors.green
+            : attempt.accuracyScore >= 0.5
             ? Colors.orange
             : Colors.red;
 
@@ -248,220 +258,228 @@ class _PronunciationHistoryScreenState
         child: InkWell(
           onTap: () => _showAttemptDetail(attempt),
           borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          attempt.targetText,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            attempt.targetText,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'You said: "${attempt.spokenText}"',
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 14,
+                          const SizedBox(height: 4),
+                          Text(
+                            'You said: "${attempt.spokenText}"',
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 14,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: scoreColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${(attempt.accuracyScore * 100).toInt()}%',
-                      style: TextStyle(
-                        color: scoreColor,
-                        fontWeight: FontWeight.bold,
+                        ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                DateFormat('h:mm a').format(attempt.attemptedAt),
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-            ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: scoreColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${(attempt.accuracyScore * 100).toInt()}%',
+                        style: TextStyle(
+                          color: scoreColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  DateFormat('h:mm a').format(attempt.attemptedAt),
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   void _showAttemptDetail(PronunciationAttempt attempt) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+      builder:
+          (context) => Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
-            const SizedBox(height: 20),
-            const Text(
-              'Pronunciation Details',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Target vs Spoken
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Target:',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                  Text(
-                    attempt.targetText,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF00796B),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'You said:',
-                    style: TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Pronunciation Details',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+
+                // Target vs Spoken
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  Text(
-                    attempt.spokenText,
-                    style: const TextStyle(fontSize: 18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Target:',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      Text(
+                        attempt.targetText,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF00796B),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'You said:',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      Text(
+                        attempt.spokenText,
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Score
+                Row(
+                  children: [
+                    const Text('Accuracy: '),
+                    Text(
+                      '${(attempt.accuracyScore * 100).toInt()}%',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color:
+                            attempt.accuracyScore >= 0.8
+                                ? Colors.green
+                                : attempt.accuracyScore >= 0.5
+                                ? Colors.orange
+                                : Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Feedback
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.lightbulb, color: Colors.blue),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          attempt.feedback,
+                          style: const TextStyle(color: Colors.blue),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Phoneme Analysis
+                if (attempt.phonemeAnalysis.isNotEmpty) ...[
+                  const Text(
+                    'Phoneme Analysis:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children:
+                        attempt.phonemeAnalysis.map((phoneme) {
+                          return Chip(
+                            avatar: Icon(
+                              phoneme.isCorrect
+                                  ? Icons.check_circle
+                                  : Icons.cancel,
+                              color:
+                                  phoneme.isCorrect ? Colors.green : Colors.red,
+                              size: 18,
+                            ),
+                            label: Text(phoneme.phoneme),
+                            backgroundColor:
+                                phoneme.isCorrect
+                                    ? Colors.green.shade50
+                                    : Colors.red.shade50,
+                          );
+                        }).toList(),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 16),
+                const SizedBox(height: 24),
 
-            // Score
-            Row(
-              children: [
-                const Text('Accuracy: '),
-                Text(
-                  '${(attempt.accuracyScore * 100).toInt()}%',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: attempt.accuracyScore >= 0.8
-                        ? Colors.green
-                        : attempt.accuracyScore >= 0.5
-                            ? Colors.orange
-                            : Colors.red,
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00796B),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text(
+                      'Close',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-
-            // Feedback
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.lightbulb, color: Colors.blue),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      attempt.feedback,
-                      style: const TextStyle(color: Colors.blue),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Phoneme Analysis
-            if (attempt.phonemeAnalysis.isNotEmpty) ...[
-              const Text(
-                'Phoneme Analysis:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: attempt.phonemeAnalysis.map((phoneme) {
-                  return Chip(
-                    avatar: Icon(
-                      phoneme.isCorrect ? Icons.check_circle : Icons.cancel,
-                      color: phoneme.isCorrect ? Colors.green : Colors.red,
-                      size: 18,
-                    ),
-                    label: Text(phoneme.phoneme),
-                    backgroundColor: phoneme.isCorrect
-                        ? Colors.green.shade50
-                        : Colors.red.shade50,
-                  );
-                }).toList(),
-              ),
-            ],
-            const SizedBox(height: 24),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00796B),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child:
-                    const Text('Close', style: TextStyle(color: Colors.white)),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 }

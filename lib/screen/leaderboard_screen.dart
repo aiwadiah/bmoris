@@ -6,6 +6,7 @@ import '../models/user_model.dart';
 import '../models/weekly_leaderboard_entry.dart';
 import '../providers/auth_provider.dart';
 import '../services/firestore_service.dart';
+import '../widgets/bmoris_back_button.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
@@ -39,41 +40,46 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     try {
       final useBootstrapLifetime =
           FirestoreService.getWeekId() == _bootstrapWeekId;
-      final weeklyEntries = useBootstrapLifetime
-          ? _mapUsersToWeeklyEntries(
-              await _firestoreService.getLeaderboard(limit: 50),
-            )
-          : await _firestoreService.getWeeklyLeaderboard(limit: 50);
+      final weeklyEntries =
+          useBootstrapLifetime
+              ? _mapUsersToWeeklyEntries(
+                await _firestoreService.getLeaderboard(limit: 50),
+              )
+              : await _firestoreService.getWeeklyLeaderboard(limit: 50);
 
       WeeklyLeaderboardEntry? currentUserEntry;
       int? currentUserRank;
       int? currentUserGap;
 
       if (userId.isNotEmpty) {
-        final visibleIndex =
-            weeklyEntries.indexWhere((entry) => entry.userId == userId);
+        final visibleIndex = weeklyEntries.indexWhere(
+          (entry) => entry.userId == userId,
+        );
         if (visibleIndex >= 0) {
           currentUserEntry = weeklyEntries[visibleIndex];
           currentUserRank = visibleIndex + 1;
-          currentUserGap = visibleIndex == 0
-              ? 0
-              : weeklyEntries[visibleIndex - 1].xp - currentUserEntry.xp;
+          currentUserGap =
+              visibleIndex == 0
+                  ? 0
+                  : weeklyEntries[visibleIndex - 1].xp - currentUserEntry.xp;
         } else if (useBootstrapLifetime) {
           final user = await _firestoreService.getUserById(userId);
           if (user != null && user.role == 'user') {
             currentUserEntry = _mapUserToWeeklyEntry(user);
-            currentUserRank =
-                await _firestoreService.getLifetimeLeaderboardRank(userId);
+            currentUserRank = await _firestoreService
+                .getLifetimeLeaderboardRank(userId);
             currentUserGap = await _firestoreService
                 .getLifetimeLeaderboardGapToNextRank(userId);
           }
         } else {
-          currentUserEntry =
-              await _firestoreService.getWeeklyLeaderboardEntry(userId);
-          currentUserRank =
-              await _firestoreService.getWeeklyLeaderboardRank(userId);
-          currentUserGap =
-              await _firestoreService.getWeeklyLeaderboardGapToNextRank(userId);
+          currentUserEntry = await _firestoreService.getWeeklyLeaderboardEntry(
+            userId,
+          );
+          currentUserRank = await _firestoreService.getWeeklyLeaderboardRank(
+            userId,
+          );
+          currentUserGap = await _firestoreService
+              .getWeeklyLeaderboardGapToNextRank(userId);
         }
       }
 
@@ -110,38 +116,39 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : RefreshIndicator(
-                onRefresh: _loadLeaderboard,
-                color: const Color(0xFF00897B),
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-                  children: [
-                    _buildHeader(),
-                    const SizedBox(height: 20),
-                    if (_weeklyEntries.isEmpty)
-                      _buildEmptyState()
-                    else ...[
-                      _buildPodium(currentUserId),
+        child:
+            _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : RefreshIndicator(
+                  onRefresh: _loadLeaderboard,
+                  color: const Color(0xFF00897B),
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+                    children: [
+                      _buildHeader(),
                       const SizedBox(height: 20),
-                      _buildLeaderboardList(currentUserId),
-                      if (_shouldShowPinnedCurrentUser(currentUserId)) ...[
-                        const SizedBox(height: 14),
-                        _buildLeaderboardRow(
-                          entry: _currentUserEntry!,
-                          rank: _currentUserRank!,
-                          isCurrentUser: true,
-                          emphasize: true,
-                        ),
+                      if (_weeklyEntries.isEmpty)
+                        _buildEmptyState()
+                      else ...[
+                        _buildPodium(currentUserId),
+                        const SizedBox(height: 20),
+                        _buildLeaderboardList(currentUserId),
+                        if (_shouldShowPinnedCurrentUser(currentUserId)) ...[
+                          const SizedBox(height: 14),
+                          _buildLeaderboardRow(
+                            entry: _currentUserEntry!,
+                            rank: _currentUserRank!,
+                            isCurrentUser: true,
+                            emphasize: true,
+                          ),
+                        ],
+                        const SizedBox(height: 22),
+                        _buildFooterMessage(),
                       ],
-                      const SizedBox(height: 22),
-                      _buildFooterMessage(),
                     ],
-                  ],
+                  ),
                 ),
-              ),
       ),
     );
   }
@@ -179,13 +186,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             children: [
               Row(
                 children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back),
-                    color: const Color(0xFF353535),
-                  ),
+                  const BMorisBackButton(),
                   const Spacer(),
-                  const SizedBox(width: 48),
+                  const SizedBox(width: 40),
                 ],
               ),
               const SizedBox(height: 4),
@@ -222,11 +225,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       ),
       child: Column(
         children: [
-          Image.asset(
-            'assets/dodo.png',
-            width: 120,
-            height: 120,
-          ),
+          Image.asset('assets/dodo.png', width: 120, height: 120),
           const SizedBox(height: 18),
           Text(
             'No weekly scores yet',
@@ -350,9 +349,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 ],
               ),
               borderRadius: BorderRadius.circular(22),
-              border: isCurrentUser
-                  ? Border.all(color: const Color(0xFF00897B), width: 2)
-                  : null,
+              border:
+                  isCurrentUser
+                      ? Border.all(color: const Color(0xFF00897B), width: 2)
+                      : null,
             ),
             child: Column(
               children: [
@@ -404,7 +404,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
   Widget _buildLeaderboardList(String currentUserId) {
     final remainingEntries =
-        _weeklyEntries.length > 3 ? _weeklyEntries.sublist(3) : <WeeklyLeaderboardEntry>[];
+        _weeklyEntries.length > 3
+            ? _weeklyEntries.sublist(3)
+            : <WeeklyLeaderboardEntry>[];
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -421,11 +423,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               isCurrentUser: remainingEntries[index].userId == currentUserId,
             ),
             if (index != remainingEntries.length - 1)
-              Divider(
-                height: 20,
-                thickness: 1,
-                color: const Color(0xFFF0EAE0),
-              ),
+              Divider(height: 20, thickness: 1, color: const Color(0xFFF0EAE0)),
           ],
         ],
       ),
@@ -443,9 +441,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       decoration: BoxDecoration(
         color: isCurrentUser ? const Color(0xFFEAF8F3) : Colors.transparent,
         borderRadius: BorderRadius.circular(18),
-        border: isCurrentUser
-            ? Border.all(color: const Color(0xFFA7DCC9), width: 1.5)
-            : null,
+        border:
+            isCurrentUser
+                ? Border.all(color: const Color(0xFFA7DCC9), width: 1.5)
+                : null,
       ),
       child: Row(
         children: [
@@ -514,22 +513,27 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         radius: radius,
         backgroundColor: const Color(0xFF00897B),
         backgroundImage: hasPhoto ? NetworkImage(entry.photoUrl!) : null,
-        child: hasPhoto
-            ? null
-            : Text(
-                initial,
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: radius * 0.8,
-                  fontWeight: FontWeight.bold,
+        child:
+            hasPhoto
+                ? null
+                : Text(
+                  initial,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: radius * 0.8,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
       ),
     );
   }
 
   Widget _buildFooterMessage() {
-    final message = switch ((_currentUserRank, _currentUserGap, _currentUserEntry)) {
+    final message = switch ((
+      _currentUserRank,
+      _currentUserGap,
+      _currentUserEntry,
+    )) {
       (_, _, null) => 'Earn XP this week to enter the chart.',
       (1, _, _) => 'You\'re in first place this week.',
       (_, final gap?, _) when gap > 0 => '$gap XP to climb one place.',
@@ -570,9 +574,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     return '${difference.inHours}h left';
   }
 
-  List<WeeklyLeaderboardEntry> _mapUsersToWeeklyEntries(
-    List<UserModel> users,
-  ) {
+  List<WeeklyLeaderboardEntry> _mapUsersToWeeklyEntries(List<UserModel> users) {
     return users.map(_mapUserToWeeklyEntry).toList();
   }
 

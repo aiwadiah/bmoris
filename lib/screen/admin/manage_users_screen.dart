@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/user_model.dart';
 import '../../services/firestore_service.dart';
+import '../../widgets/bmoris_back_button.dart';
 
 class ManageUsersScreen extends StatefulWidget {
   const ManageUsersScreen({super.key});
@@ -24,13 +25,15 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
   Future<void> _loadUsers() async {
     setState(() => _isLoading = true);
     try {
-      final snapshot = await _firestoreService.firestore
-          .collection('users')
-          .orderBy('createdAt', descending: true)
-          .get();
-      _users = snapshot.docs
-          .map((doc) => UserModel.fromMap(doc.data(), doc.id))
-          .toList();
+      final snapshot =
+          await _firestoreService.firestore
+              .collection('users')
+              .orderBy('createdAt', descending: true)
+              .get();
+      _users =
+          snapshot.docs
+              .map((doc) => UserModel.fromMap(doc.data(), doc.id))
+              .toList();
     } catch (e) {
       // Handle error
     }
@@ -47,21 +50,22 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
   Future<void> _deleteUser(UserModel user) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete User'),
-        content: Text('Are you sure you want to delete "${user.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete User'),
+            content: Text('Are you sure you want to delete "${user.name}"?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
     );
 
     if (confirm == true) {
@@ -116,10 +120,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
           );
         }
       }
@@ -130,24 +131,25 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
     final newRole = user.role == 'admin' ? 'user' : 'admin';
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(newRole == 'admin' ? 'Make Admin' : 'Remove Admin'),
-        content: Text(
-          newRole == 'admin'
-              ? 'Grant admin privileges to "${user.name}"?'
-              : 'Remove admin privileges from "${user.name}"?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: Text(newRole == 'admin' ? 'Make Admin' : 'Remove Admin'),
+            content: Text(
+              newRole == 'admin'
+                  ? 'Grant admin privileges to "${user.name}"?'
+                  : 'Remove admin privileges from "${user.name}"?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Confirm'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Confirm'),
-          ),
-        ],
-      ),
     );
 
     if (confirm == true) {
@@ -172,10 +174,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
           );
         }
       }
@@ -188,74 +187,89 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const BMorisBackButton(),
         title: const Text('Manage Users'),
         backgroundColor: const Color(0xFF00796B),
         foregroundColor: Colors.white,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                // Filter Section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  color: Colors.grey.shade100,
-                  child: Row(
-                    children: [
-                      const Text(
-                        'Filter by Role:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: SegmentedButton<String>(
-                          segments: const [
-                            ButtonSegment(value: 'all', label: Text('All')),
-                            ButtonSegment(value: 'user', label: Text('Users')),
-                            ButtonSegment(value: 'admin', label: Text('Admins')),
-                          ],
-                          selected: {_filterRole},
-                          onSelectionChanged: (Set<String> newSelection) {
-                            setState(() {
-                              _filterRole = newSelection.first;
-                            });
-                          },
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                children: [
+                  // Filter Section
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    color: Colors.grey.shade100,
+                    child: Row(
+                      children: [
+                        const Text(
+                          'Filter by Role:',
+                          style: TextStyle(fontWeight: FontWeight.bold),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Users List
-                Expanded(
-                  child: filteredUsers.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.people_outline,
-                                  size: 80, color: Colors.grey.shade400),
-                              const SizedBox(height: 16),
-                              const Text(
-                                'No users found',
-                                style: TextStyle(fontSize: 18, color: Colors.grey),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SegmentedButton<String>(
+                            segments: const [
+                              ButtonSegment(value: 'all', label: Text('All')),
+                              ButtonSegment(
+                                value: 'user',
+                                label: Text('Users'),
+                              ),
+                              ButtonSegment(
+                                value: 'admin',
+                                label: Text('Admins'),
                               ),
                             ],
-                          ),
-                        )
-                      : RefreshIndicator(
-                          onRefresh: _loadUsers,
-                          child: ListView.builder(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: filteredUsers.length,
-                            itemBuilder: (context, index) {
-                              final user = filteredUsers[index];
-                              return _buildUserCard(user);
+                            selected: {_filterRole},
+                            onSelectionChanged: (Set<String> newSelection) {
+                              setState(() {
+                                _filterRole = newSelection.first;
+                              });
                             },
                           ),
                         ),
-                ),
-              ],
-            ),
+                      ],
+                    ),
+                  ),
+                  // Users List
+                  Expanded(
+                    child:
+                        filteredUsers.isEmpty
+                            ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.people_outline,
+                                    size: 80,
+                                    color: Colors.grey.shade400,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const Text(
+                                    'No users found',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                            : RefreshIndicator(
+                              onRefresh: _loadUsers,
+                              child: ListView.builder(
+                                padding: const EdgeInsets.all(16),
+                                itemCount: filteredUsers.length,
+                                itemBuilder: (context, index) {
+                                  final user = filteredUsers[index];
+                                  return _buildUserCard(user);
+                                },
+                              ),
+                            ),
+                  ),
+                ],
+              ),
     );
   }
 
@@ -264,7 +278,8 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       child: ExpansionTile(
         leading: CircleAvatar(
-          backgroundColor: user.isAdmin ? Colors.orange : const Color(0xFF00796B),
+          backgroundColor:
+              user.isAdmin ? Colors.orange : const Color(0xFF00796B),
           child: Icon(
             user.isAdmin ? Icons.admin_panel_settings : Icons.person,
             color: Colors.white,
@@ -281,7 +296,9 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                 Chip(
                   label: Text(user.role.toUpperCase()),
                   backgroundColor:
-                      user.isAdmin ? Colors.orange.shade50 : Colors.blue.shade50,
+                      user.isAdmin
+                          ? Colors.orange.shade50
+                          : Colors.blue.shade50,
                   labelStyle: const TextStyle(fontSize: 10),
                   padding: EdgeInsets.zero,
                 ),
@@ -324,13 +341,18 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                       ),
                     ),
                     ElevatedButton.icon(
                       onPressed: () => _toggleAdminRole(user),
                       icon: Icon(
-                        user.isAdmin ? Icons.person : Icons.admin_panel_settings,
+                        user.isAdmin
+                            ? Icons.person
+                            : Icons.admin_panel_settings,
                         size: 16,
                       ),
                       label: Text(
@@ -340,17 +362,26 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                       ),
                     ),
                     ElevatedButton.icon(
                       onPressed: () => _deleteUser(user),
                       icon: const Icon(Icons.delete, size: 16),
-                      label: const Text('Delete', style: TextStyle(fontSize: 12)),
+                      label: const Text(
+                        'Delete',
+                        style: TextStyle(fontSize: 12),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                       ),
                     ),
                   ],
@@ -483,12 +514,15 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                   labelText: 'Level',
                   border: OutlineInputBorder(),
                 ),
-                items: List.generate(50, (i) => i + 1)
-                    .map((level) => DropdownMenuItem(
-                          value: level,
-                          child: Text('Level $level'),
-                        ))
-                    .toList(),
+                items:
+                    List.generate(50, (i) => i + 1)
+                        .map(
+                          (level) => DropdownMenuItem(
+                            value: level,
+                            child: Text('Level $level'),
+                          ),
+                        )
+                        .toList(),
                 onChanged: (value) {
                   setState(() {
                     _level = value!;
@@ -509,9 +543,10 @@ class _UserFormDialogState extends State<_UserFormDialog> {
             if (_formKey.currentState!.validate()) {
               Navigator.pop(context, {
                 'name': _nameController.text.trim(),
-                'phoneNumber': _phoneController.text.trim().isEmpty
-                    ? null
-                    : _phoneController.text.trim(),
+                'phoneNumber':
+                    _phoneController.text.trim().isEmpty
+                        ? null
+                        : _phoneController.text.trim(),
                 'xp': int.parse(_xpController.text.trim()),
                 'streak': int.parse(_streakController.text.trim()),
                 'currentLevel': _level,

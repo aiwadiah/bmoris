@@ -53,11 +53,12 @@ class _LessonScreenState extends State<LessonScreen> {
           }
 
           final categories = ['All', ...lessonProvider.getCategories()];
-          final filteredLessons = _selectedCategory == 'All'
-              ? lessonProvider.lessons
-              : lessonProvider.lessons
-                  .where((l) => l.category == _selectedCategory)
-                  .toList();
+          final filteredLessons =
+              _selectedCategory == 'All'
+                  ? lessonProvider.lessons
+                  : lessonProvider.lessons
+                      .where((l) => l.category == _selectedCategory)
+                      .toList();
 
           return Column(
             children: [
@@ -66,7 +67,10 @@ class _LessonScreenState extends State<LessonScreen> {
                 height: 60,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   itemCount: categories.length,
                   itemBuilder: (context, index) {
                     final category = categories[index];
@@ -86,7 +90,8 @@ class _LessonScreenState extends State<LessonScreen> {
                         selectedColor: const Color(0xFF00897B),
                         labelStyle: GoogleFonts.poppins(
                           color: isSelected ? Colors.white : Colors.black87,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.normal,
                           fontSize: 13,
                         ),
                         backgroundColor: Colors.grey.shade50,
@@ -94,7 +99,10 @@ class _LessonScreenState extends State<LessonScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         side: BorderSide(
-                          color: isSelected ? const Color(0xFF00897B) : Colors.grey.shade200,
+                          color:
+                              isSelected
+                                  ? const Color(0xFF00897B)
+                                  : Colors.grey.shade200,
                         ),
                         showCheckmark: false,
                       ),
@@ -126,11 +134,7 @@ class _LessonScreenState extends State<LessonScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image.asset(
-            'assets/dodo.png',
-            width: 100,
-            height: 100,
-          ),
+          Image.asset('assets/dodo.png', width: 100, height: 100),
           const SizedBox(height: 16),
           const Text(
             'No lessons available',
@@ -172,7 +176,10 @@ class _LessonScreenState extends State<LessonScreen> {
                         color: const Color(0xFF00897B).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.book_rounded, color: Color(0xFF00897B)),
+                      child: const Icon(
+                        Icons.book_rounded,
+                        color: Color(0xFF00897B),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -228,7 +235,10 @@ class _LessonScreenState extends State<LessonScreen> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.blue.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(8),
@@ -244,15 +254,23 @@ class _LessonScreenState extends State<LessonScreen> {
                     ),
                     const Spacer(),
                     FutureBuilder<bool>(
-                      future: Provider.of<LessonProvider>(context, listen: false)
-                          .isLessonOffline(lesson.id),
+                      future: Provider.of<LessonProvider>(
+                        context,
+                        listen: false,
+                      ).isLessonOffline(lesson.id),
                       builder: (context, snapshot) {
                         if (snapshot.data == true) {
-                          return const Icon(Icons.cloud_done_rounded,
-                              color: Color(0xFF00897B), size: 20);
+                          return const Icon(
+                            Icons.cloud_done_rounded,
+                            color: Color(0xFF00897B),
+                            size: 20,
+                          );
                         }
-                        return Icon(Icons.download_rounded,
-                            color: Colors.grey.shade400, size: 20);
+                        return Icon(
+                          Icons.download_rounded,
+                          color: Colors.grey.shade400,
+                          size: 20,
+                        );
                       },
                     ),
                   ],
@@ -313,36 +331,29 @@ class _LessonScreenState extends State<LessonScreen> {
   }
 
   void _openLesson(BuildContext context, LessonModel lesson) {
-    Provider.of<LessonProvider>(context, listen: false).setCurrentLesson(lesson);
+    Provider.of<LessonProvider>(
+      context,
+      listen: false,
+    ).setCurrentLesson(lesson);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _LessonDetailSheet(lesson: lesson),
+      builder: (context) => LessonDetailSheet(lesson: lesson),
     );
   }
-
-  void _downloadLesson(BuildContext context, LessonModel lesson) async {
-    await Provider.of<LessonProvider>(context, listen: false)
-        .downloadLesson(lesson);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${lesson.title} saved for offline access')),
-      );
-    }
-  }
 }
 
-class _LessonDetailSheet extends StatefulWidget {
+class LessonDetailSheet extends StatefulWidget {
   final LessonModel lesson;
 
-  const _LessonDetailSheet({required this.lesson});
+  const LessonDetailSheet({super.key, required this.lesson});
 
   @override
-  State<_LessonDetailSheet> createState() => _LessonDetailSheetState();
+  State<LessonDetailSheet> createState() => _LessonDetailSheetState();
 }
 
-class _LessonDetailSheetState extends State<_LessonDetailSheet> {
+class _LessonDetailSheetState extends State<LessonDetailSheet> {
   int _currentIndex = 0;
 
   @override
@@ -398,17 +409,20 @@ class _LessonDetailSheetState extends State<_LessonDetailSheet> {
                 ),
               ),
               LinearProgressIndicator(
-                value: widget.lesson.contents.isEmpty
-                    ? 0
-                    : (_currentIndex + 1) / widget.lesson.contents.length,
+                value:
+                    widget.lesson.contents.isEmpty
+                        ? 0
+                        : (_currentIndex + 1) / widget.lesson.contents.length,
                 backgroundColor: Colors.grey.shade200,
-                valueColor:
-                    const AlwaysStoppedAnimation<Color>(Color(0xFF00796B)),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  Color(0xFF00796B),
+                ),
               ),
               Expanded(
-                child: widget.lesson.contents.isEmpty
-                    ? const Center(child: Text('No content available'))
-                    : _buildContentView(),
+                child:
+                    widget.lesson.contents.isEmpty
+                        ? const Center(child: Text('No content available'))
+                        : _buildContentView(),
               ),
               _buildNavigationButtons(),
             ],
@@ -445,10 +459,7 @@ class _LessonDetailSheetState extends State<_LessonDetailSheet> {
                 const SizedBox(height: 12),
                 Text(
                   content.english,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey,
-                  ),
+                  style: const TextStyle(fontSize: 18, color: Colors.grey),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -463,12 +474,13 @@ class _LessonDetailSheetState extends State<_LessonDetailSheet> {
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
-              children: content.phonemes!.map((phoneme) {
-                return Chip(
-                  label: Text(phoneme),
-                  backgroundColor: Colors.amber.shade50,
-                );
-              }).toList(),
+              children:
+                  content.phonemes!.map((phoneme) {
+                    return Chip(
+                      label: Text(phoneme),
+                      backgroundColor: Colors.amber.shade50,
+                    );
+                  }).toList(),
             ),
           ],
         ],
@@ -551,8 +563,7 @@ class _LessonDetailSheetState extends State<_LessonDetailSheet> {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-              'Lesson completed! +${widget.lesson.xpReward} XP'),
+          content: Text('Lesson completed! +${widget.lesson.xpReward} XP'),
           backgroundColor: Colors.green,
         ),
       );

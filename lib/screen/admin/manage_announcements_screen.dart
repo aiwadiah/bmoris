@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/firestore_service.dart';
 import '../../models/announcement_model.dart';
+import '../../widgets/bmoris_back_button.dart';
 
 class ManageAnnouncementsScreen extends StatefulWidget {
   const ManageAnnouncementsScreen({super.key});
@@ -71,10 +72,11 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
   Future<void> _editAnnouncement(AnnouncementModel announcement) async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (context) => _AnnouncementDialog(
-        title: announcement.title,
-        content: announcement.content,
-      ),
+      builder:
+          (context) => _AnnouncementDialog(
+            title: announcement.title,
+            content: announcement.content,
+          ),
     );
 
     if (result != null) {
@@ -82,10 +84,7 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
         await _firestoreService.firestore
             .collection('announcements')
             .doc(announcement.id)
-            .update({
-          'title': result['title'],
-          'content': result['content'],
-        });
+            .update({'title': result['title'], 'content': result['content']});
         _loadAnnouncements();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -121,21 +120,26 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
   Future<void> _deleteAnnouncement(String id) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Announcement'),
-        content:
-            const Text('Are you sure you want to delete this announcement?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Announcement'),
+            content: const Text(
+              'Are you sure you want to delete this announcement?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
     );
 
     if (confirm == true) {
@@ -164,117 +168,134 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: const BMorisBackButton(),
         title: const Text('Manage Announcements'),
         backgroundColor: const Color(0xFF00796B),
         foregroundColor: Colors.white,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _announcements.isEmpty
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _announcements.isEmpty
               ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.announcement,
-                          size: 80, color: Colors.grey.shade400),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'No announcements yet',
-                        style: TextStyle(fontSize: 18, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Create your first announcement',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _announcements.length,
-                  itemBuilder: (context, index) {
-                    final announcement = _announcements[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: announcement.isActive
-                              ? const Color(0xFF00796B)
-                              : Colors.grey,
-                          child: const Icon(
-                            Icons.announcement,
-                            color: Colors.white,
-                          ),
-                        ),
-                        title: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                announcement.title,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            Switch(
-                              value: announcement.isActive,
-                              onChanged: (_) => _toggleActive(announcement),
-                              activeTrackColor: const Color(0xFF00796B).withValues(alpha: 0.5),
-                              activeColor: const Color(0xFF00796B),
-                            ),
-                          ],
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 4),
-                            Text(announcement.content),
-                            const SizedBox(height: 8),
-                            Text(
-                              'By: ${announcement.createdBy} • ${announcement.createdAt.toString().substring(0, 16)}',
-                              style: const TextStyle(
-                                  fontSize: 12, color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                        isThreeLine: true,
-                        trailing: PopupMenuButton(
-                          itemBuilder: (context) => [
-                            const PopupMenuItem(
-                              value: 'edit',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.edit, size: 20),
-                                  SizedBox(width: 8),
-                                  Text('Edit'),
-                                ],
-                              ),
-                            ),
-                            const PopupMenuItem(
-                              value: 'delete',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.delete,
-                                      size: 20, color: Colors.red),
-                                  SizedBox(width: 8),
-                                  Text('Delete',
-                                      style: TextStyle(color: Colors.red)),
-                                ],
-                              ),
-                            ),
-                          ],
-                          onSelected: (value) {
-                            if (value == 'edit') {
-                              _editAnnouncement(announcement);
-                            } else if (value == 'delete') {
-                              _deleteAnnouncement(announcement.id);
-                            }
-                          },
-                        ),
-                      ),
-                    );
-                  },
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.announcement,
+                      size: 80,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'No announcements yet',
+                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Create your first announcement',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
                 ),
+              )
+              : ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _announcements.length,
+                itemBuilder: (context, index) {
+                  final announcement = _announcements[index];
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor:
+                            announcement.isActive
+                                ? const Color(0xFF00796B)
+                                : Colors.grey,
+                        child: const Icon(
+                          Icons.announcement,
+                          color: Colors.white,
+                        ),
+                      ),
+                      title: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              announcement.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          Switch(
+                            value: announcement.isActive,
+                            onChanged: (_) => _toggleActive(announcement),
+                            activeTrackColor: const Color(
+                              0xFF00796B,
+                            ).withValues(alpha: 0.5),
+                            activeColor: const Color(0xFF00796B),
+                          ),
+                        ],
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 4),
+                          Text(announcement.content),
+                          const SizedBox(height: 8),
+                          Text(
+                            'By: ${announcement.createdBy} • ${announcement.createdAt.toString().substring(0, 16)}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                      isThreeLine: true,
+                      trailing: PopupMenuButton(
+                        itemBuilder:
+                            (context) => [
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit, size: 20),
+                                    SizedBox(width: 8),
+                                    Text('Edit'),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.delete,
+                                      size: 20,
+                                      color: Colors.red,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Delete',
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                        onSelected: (value) {
+                          if (value == 'edit') {
+                            _editAnnouncement(announcement);
+                          } else if (value == 'delete') {
+                            _deleteAnnouncement(announcement.id);
+                          }
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addAnnouncement,
         backgroundColor: const Color(0xFF00796B),
@@ -288,10 +309,7 @@ class _AnnouncementDialog extends StatefulWidget {
   final String? title;
   final String? content;
 
-  const _AnnouncementDialog({
-    this.title,
-    this.content,
-  });
+  const _AnnouncementDialog({this.title, this.content});
 
   @override
   State<_AnnouncementDialog> createState() => _AnnouncementDialogState();
@@ -319,8 +337,9 @@ class _AnnouncementDialogState extends State<_AnnouncementDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title:
-          Text(widget.title == null ? 'Add Announcement' : 'Edit Announcement'),
+      title: Text(
+        widget.title == null ? 'Add Announcement' : 'Edit Announcement',
+      ),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(

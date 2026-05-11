@@ -9,14 +9,18 @@ class LessonProvider extends ChangeNotifier {
 
   List<LessonModel> _lessons = [];
   List<LessonModel> _offlineLessons = [];
+  final Map<String, OfflineLessonMetadata> _offlineMetadata = {};
   LessonModel? _currentLesson;
   bool _isLoading = false;
+  int _offlineStorageUsageBytes = 0;
   String? _error;
 
   List<LessonModel> get lessons => _lessons;
   List<LessonModel> get offlineLessons => _offlineLessons;
+  Map<String, OfflineLessonMetadata> get offlineMetadata => _offlineMetadata;
   LessonModel? get currentLesson => _currentLesson;
   bool get isLoading => _isLoading;
+  int get offlineStorageUsageBytes => _offlineStorageUsageBytes;
   String? get error => _error;
 
   Future<void> loadLessons() async {
@@ -52,7 +56,20 @@ class LessonProvider extends ChangeNotifier {
 
   Future<void> loadOfflineLessons() async {
     _offlineLessons = await _offlineService.getOfflineLessons();
+    final metadata = await _offlineService.getOfflineLessonMetadata();
+    _offlineMetadata
+      ..clear()
+      ..addEntries(metadata.map((item) => MapEntry(item.lessonId, item)));
+    await loadOfflineStorageUsage(notify: false);
     notifyListeners();
+  }
+
+  Future<void> loadOfflineStorageUsage({bool notify = true}) async {
+    _offlineStorageUsageBytes =
+        await _offlineService.getOfflineStorageUsageBytes();
+    if (notify) {
+      notifyListeners();
+    }
   }
 
   Future<void> downloadLesson(LessonModel lesson) async {
@@ -62,6 +79,11 @@ class LessonProvider extends ChangeNotifier {
 
   Future<void> removeOfflineLesson(String lessonId) async {
     await _offlineService.deleteOfflineLesson(lessonId);
+    await loadOfflineLessons();
+  }
+
+  Future<void> recordOfflineLessonAccess(String lessonId) async {
+    await _offlineService.recordLessonAccess(lessonId);
     await loadOfflineLessons();
   }
 

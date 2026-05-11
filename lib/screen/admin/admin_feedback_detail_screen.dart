@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/feedback_model.dart';
+import '../../widgets/bmoris_back_button.dart';
 
 class AdminFeedbackDetailScreen extends StatelessWidget {
   const AdminFeedbackDetailScreen({super.key, required this.feedback});
@@ -11,6 +12,7 @@ class AdminFeedbackDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: const BMorisBackButton(),
         title: const Text('Feedback Detail'),
         backgroundColor: const Color(0xFF00796B),
         foregroundColor: Colors.white,
@@ -78,6 +80,8 @@ class AdminFeedbackDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text('From: ${feedback.userName}'),
+            const SizedBox(height: 8),
+            Chip(label: Text(feedback.category)),
             const SizedBox(height: 8),
             Row(
               children: [

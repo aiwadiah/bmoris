@@ -277,7 +277,6 @@ class _PronunciationScreenState extends State<PronunciationScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        automaticallyImplyLeading: false,
         title: Text(
           'Pronunciation Practice',
           style: GoogleFonts.poppins(

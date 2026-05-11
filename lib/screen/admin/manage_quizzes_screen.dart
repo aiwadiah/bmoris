@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/quiz_model.dart';
 import '../../services/firestore_service.dart';
 import '../../services/ai_service.dart';
+import '../../widgets/bmoris_back_button.dart';
 
 class ManageQuizzesScreen extends StatefulWidget {
   const ManageQuizzesScreen({super.key});
@@ -47,7 +48,8 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
 
   List<QuizModel> get _filteredQuizzes {
     return _quizzes.where((quiz) {
-      if (_selectedDifficulty != null && quiz.difficulty != _selectedDifficulty) {
+      if (_selectedDifficulty != null &&
+          quiz.difficulty != _selectedDifficulty) {
         return false;
       }
       if (_selectedCategory != null && quiz.category != _selectedCategory) {
@@ -60,21 +62,22 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
   Future<void> _deleteQuiz(QuizModel quiz) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Quiz'),
-        content: Text('Are you sure you want to delete this quiz?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Quiz'),
+            content: Text('Are you sure you want to delete this quiz?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
     );
 
     if (confirm == true) {
@@ -152,10 +155,7 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
       setState(() => _isGenerating = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -191,10 +191,7 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
           );
         }
       }
@@ -207,129 +204,148 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const BMorisBackButton(),
         title: const Text('Manage Quizzes'),
         backgroundColor: const Color(0xFF00796B),
         foregroundColor: Colors.white,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                // Filter Section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  color: Colors.grey.shade100,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Filters',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          // Difficulty Filter
-                          Expanded(
-                            child: DropdownButtonFormField<int?>(
-                              value: _selectedDifficulty,
-                              decoration: const InputDecoration(
-                                labelText: 'Difficulty',
-                                prefixIcon: Icon(Icons.signal_cellular_alt),
-                                border: OutlineInputBorder(),
-                                isDense: true,
-                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              ),
-                              items: [
-                                const DropdownMenuItem<int?>(
-                                  value: null,
-                                  child: Text('All'),
-                                ),
-                                ...List.generate(5, (i) => i + 1).map((level) {
-                                  return DropdownMenuItem<int?>(
-                                    value: level,
-                                    child: Text('Level $level'),
-                                  );
-                                }),
-                              ],
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedDifficulty = value;
-                                });
-                              },
-                            ),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                children: [
+                  // Filter Section
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    color: Colors.grey.shade100,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Filters',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
-                          const SizedBox(width: 12),
-                          // Category Filter
-                          Expanded(
-                            child: DropdownButtonFormField<String?>(
-                              value: _selectedCategory,
-                              decoration: const InputDecoration(
-                                labelText: 'Category',
-                                prefixIcon: Icon(Icons.category),
-                                border: OutlineInputBorder(),
-                                isDense: true,
-                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              ),
-                              items: [
-                                const DropdownMenuItem<String?>(
-                                  value: null,
-                                  child: Text('All'),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            // Difficulty Filter
+                            Expanded(
+                              child: DropdownButtonFormField<int?>(
+                                value: _selectedDifficulty,
+                                decoration: const InputDecoration(
+                                  labelText: 'Difficulty',
+                                  prefixIcon: Icon(Icons.signal_cellular_alt),
+                                  border: OutlineInputBorder(),
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
                                 ),
-                                ..._categories.map((category) {
-                                  return DropdownMenuItem<String?>(
-                                    value: category,
-                                    child: Text(category),
-                                  );
-                                }),
-                              ],
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedCategory = value;
-                                });
-                              },
+                                items: [
+                                  const DropdownMenuItem<int?>(
+                                    value: null,
+                                    child: Text('All'),
+                                  ),
+                                  ...List.generate(5, (i) => i + 1).map((
+                                    level,
+                                  ) {
+                                    return DropdownMenuItem<int?>(
+                                      value: level,
+                                      child: Text('Level $level'),
+                                    );
+                                  }),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedDifficulty = value;
+                                  });
+                                },
+                              ),
                             ),
+                            const SizedBox(width: 12),
+                            // Category Filter
+                            Expanded(
+                              child: DropdownButtonFormField<String?>(
+                                value: _selectedCategory,
+                                decoration: const InputDecoration(
+                                  labelText: 'Category',
+                                  prefixIcon: Icon(Icons.category),
+                                  border: OutlineInputBorder(),
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                ),
+                                items: [
+                                  const DropdownMenuItem<String?>(
+                                    value: null,
+                                    child: Text('All'),
+                                  ),
+                                  ..._categories.map((category) {
+                                    return DropdownMenuItem<String?>(
+                                      value: category,
+                                      child: Text(category),
+                                    );
+                                  }),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedCategory = value;
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_selectedDifficulty != null ||
+                            _selectedCategory != null) ...[
+                          const SizedBox(height: 8),
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _selectedDifficulty = null;
+                                _selectedCategory = null;
+                              });
+                            },
+                            icon: const Icon(Icons.clear),
+                            label: const Text('Clear Filters'),
                           ),
                         ],
-                      ),
-                      if (_selectedDifficulty != null || _selectedCategory != null) ...[
-                        const SizedBox(height: 8),
-                        TextButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              _selectedDifficulty = null;
-                              _selectedCategory = null;
-                            });
-                          },
-                          icon: const Icon(Icons.clear),
-                          label: const Text('Clear Filters'),
-                        ),
                       ],
-                    ],
+                    ),
                   ),
-                ),
-                // Quiz List
-                Expanded(
-                  child: _quizzes.isEmpty
-                      ? _buildEmptyState()
-                      : filteredQuizzes.isEmpty
-                          ? Center(
+                  // Quiz List
+                  Expanded(
+                    child:
+                        _quizzes.isEmpty
+                            ? _buildEmptyState()
+                            : filteredQuizzes.isEmpty
+                            ? Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.search_off, size: 80, color: Colors.grey.shade400),
+                                  Icon(
+                                    Icons.search_off,
+                                    size: 80,
+                                    color: Colors.grey.shade400,
+                                  ),
                                   const SizedBox(height: 16),
                                   const Text(
                                     'No quizzes match your filters',
-                                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.grey,
+                                    ),
                                   ),
                                 ],
                               ),
                             )
-                          : RefreshIndicator(
+                            : RefreshIndicator(
                               onRefresh: _loadQuizzes,
                               child: ListView.builder(
                                 padding: const EdgeInsets.all(16),
@@ -340,9 +356,9 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
                                 },
                               ),
                             ),
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -350,16 +366,17 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
             onPressed: _isGenerating ? null : _generateQuizWithAI,
             backgroundColor: _isGenerating ? Colors.grey : Colors.purple,
             heroTag: 'ai_quiz',
-            child: _isGenerating
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : const Icon(Icons.auto_awesome, color: Colors.white),
+            child:
+                _isGenerating
+                    ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                    : const Icon(Icons.auto_awesome, color: Colors.white),
           ),
           const SizedBox(height: 12),
           FloatingActionButton(
@@ -410,11 +427,19 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
             style: const TextStyle(color: Colors.white),
           ),
         ),
-        title: Text(quiz.question, maxLines: 2, overflow: TextOverflow.ellipsis),
+        title: Text(
+          quiz.question,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(quiz.questionMalay, maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(
+              quiz.questionMalay,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             const SizedBox(height: 4),
             Row(
               children: [
@@ -434,28 +459,29 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
           ],
         ),
         trailing: PopupMenuButton(
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'edit',
-              child: Row(
-                children: [
-                  Icon(Icons.edit, size: 20),
-                  SizedBox(width: 8),
-                  Text('Edit'),
-                ],
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(Icons.delete, color: Colors.red, size: 20),
-                  SizedBox(width: 8),
-                  Text('Delete', style: TextStyle(color: Colors.red)),
-                ],
-              ),
-            ),
-          ],
+          itemBuilder:
+              (context) => [
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit, size: 20),
+                      SizedBox(width: 8),
+                      Text('Edit'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete, color: Colors.red, size: 20),
+                      SizedBox(width: 8),
+                      Text('Delete', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
+              ],
           onSelected: (value) {
             if (value == 'edit') {
               _addOrEditQuiz(quiz);
@@ -547,12 +573,15 @@ class _AIQuizGeneratorDialogState extends State<_AIQuizGeneratorDialog> {
                 labelText: 'Difficulty',
                 border: OutlineInputBorder(),
               ),
-              items: List.generate(5, (i) => i + 1)
-                  .map((level) => DropdownMenuItem(
-                        value: level,
-                        child: Text('Level $level'),
-                      ))
-                  .toList(),
+              items:
+                  List.generate(5, (i) => i + 1)
+                      .map(
+                        (level) => DropdownMenuItem(
+                          value: level,
+                          child: Text('Level $level'),
+                        ),
+                      )
+                      .toList(),
               onChanged: (value) {
                 setState(() {
                   _difficulty = value!;
@@ -685,12 +714,15 @@ class _QuizFormDialogState extends State<_QuizFormDialog> {
                   labelText: 'Difficulty',
                   border: OutlineInputBorder(),
                 ),
-                items: List.generate(5, (i) => i + 1)
-                    .map((level) => DropdownMenuItem(
-                          value: level,
-                          child: Text('Level $level'),
-                        ))
-                    .toList(),
+                items:
+                    List.generate(5, (i) => i + 1)
+                        .map(
+                          (level) => DropdownMenuItem(
+                            value: level,
+                            child: Text('Level $level'),
+                          ),
+                        )
+                        .toList(),
                 onChanged: (value) {
                   setState(() {
                     _difficulty = value!;
@@ -721,11 +753,13 @@ class _QuizFormDialogState extends State<_QuizFormDialog> {
                         child: TextFormField(
                           controller: _optionControllers[index],
                           decoration: InputDecoration(
-                            labelText: 'Option ${String.fromCharCode(65 + index)}',
+                            labelText:
+                                'Option ${String.fromCharCode(65 + index)}',
                             border: const OutlineInputBorder(),
                             isDense: true,
                           ),
-                          validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
+                          validator:
+                              (v) => v?.isEmpty ?? true ? 'Required' : null,
                         ),
                       ),
                     ],
@@ -750,7 +784,8 @@ class _QuizFormDialogState extends State<_QuizFormDialog> {
                 'category': _categoryController.text.trim(),
                 'difficulty': _difficulty,
                 'correctIndex': _correctIndex,
-                'options': _optionControllers.map((c) => c.text.trim()).toList(),
+                'options':
+                    _optionControllers.map((c) => c.text.trim()).toList(),
                 'lessonId': widget.quiz?.lessonId ?? '',
                 'type': widget.quiz?.type ?? 'multiple_choice',
               });

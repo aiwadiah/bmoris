@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/firestore_service.dart';
+import '../../widgets/bmoris_back_button.dart';
 
 class ManageAIPromptsScreen extends StatefulWidget {
   const ManageAIPromptsScreen({super.key});
@@ -23,10 +24,11 @@ class _ManageAIPromptsScreenState extends State<ManageAIPromptsScreen> {
   Future<void> _loadPrompts() async {
     setState(() => _isLoading = true);
     try {
-      final doc = await _firestoreService.firestore
-          .collection('settings')
-          .doc('ai_prompts')
-          .get();
+      final doc =
+          await _firestoreService.firestore
+              .collection('settings')
+              .doc('ai_prompts')
+              .get();
 
       if (doc.exists) {
         final data = doc.data() as Map<String, dynamic>;
@@ -84,9 +86,7 @@ class _ManageAIPromptsScreenState extends State<ManageAIPromptsScreen> {
       await _firestoreService.firestore
           .collection('settings')
           .doc('ai_prompts')
-          .set({
-        prompt.id: prompt.prompt,
-      }, SetOptions(merge: true));
+          .set({prompt.id: prompt.prompt}, SetOptions(merge: true));
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -133,21 +133,22 @@ class _ManageAIPromptsScreenState extends State<ManageAIPromptsScreen> {
   Future<void> _resetToDefault(AIPrompt prompt) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reset to Default'),
-        content: Text('Reset "${prompt.name}" to default prompt?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Reset to Default'),
+            content: Text('Reset "${prompt.name}" to default prompt?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: Colors.orange),
+                child: const Text('Reset'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.orange),
-            child: const Text('Reset'),
-          ),
-        ],
-      ),
     );
 
     if (confirm == true) {
@@ -191,34 +192,38 @@ class _ManageAIPromptsScreenState extends State<ManageAIPromptsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: const BMorisBackButton(),
         title: const Text('Manage AI Prompts'),
         backgroundColor: const Color(0xFF00796B),
         foregroundColor: Colors.white,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadPrompts,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  const Text(
-                    'AI Training Prompts',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicator(
+                onRefresh: _loadPrompts,
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    const Text(
+                      'AI Training Prompts',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Configure the prompts used by the AI to analyze pronunciation, generate feedback, and create quiz questions.',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 24),
-                  ..._prompts.values.map((prompt) => _buildPromptCard(prompt)),
-                ],
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Configure the prompts used by the AI to analyze pronunciation, generate feedback, and create quiz questions.',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                    const SizedBox(height: 24),
+                    ..._prompts.values.map(
+                      (prompt) => _buildPromptCard(prompt),
+                    ),
+                  ],
+                ),
               ),
-            ),
     );
   }
 
@@ -232,10 +237,7 @@ class _ManageAIPromptsScreenState extends State<ManageAIPromptsScreen> {
           children: [
             Row(
               children: [
-                Icon(
-                  _getPromptIcon(prompt.id),
-                  color: const Color(0xFF00796B),
-                ),
+                Icon(_getPromptIcon(prompt.id), color: const Color(0xFF00796B)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -271,10 +273,7 @@ class _ManageAIPromptsScreenState extends State<ManageAIPromptsScreen> {
                 prompt.prompt.length > 200
                     ? '${prompt.prompt.substring(0, 200)}...'
                     : prompt.prompt,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontFamily: 'monospace',
-                ),
+                style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
               ),
             ),
             const SizedBox(height: 12),
@@ -422,21 +421,22 @@ class _PromptEditorScreenState extends State<_PromptEditorScreen> {
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Unsaved Changes'),
-        content: const Text('You have unsaved changes. Discard them?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Unsaved Changes'),
+            content: const Text('You have unsaved changes. Discard them?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Discard'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Discard'),
-          ),
-        ],
-      ),
     );
 
     return result ?? false;
@@ -455,14 +455,12 @@ class _PromptEditorScreenState extends State<_PromptEditorScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
+          leading: const BMorisBackButton(),
           title: Text('Edit ${widget.prompt.name}'),
           backgroundColor: const Color(0xFF00796B),
           foregroundColor: Colors.white,
           actions: [
-            IconButton(
-              icon: const Icon(Icons.check),
-              onPressed: _save,
-            ),
+            IconButton(icon: const Icon(Icons.check), onPressed: _save),
           ],
         ),
         body: Column(
@@ -478,12 +476,18 @@ class _PromptEditorScreenState extends State<_PromptEditorScreen> {
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
-                  _buildVariableChip('{target_text}',
-                      'The text the user should pronounce'),
                   _buildVariableChip(
-                      '{spoken_text}', 'The text transcribed from user speech'),
+                    '{target_text}',
+                    'The text the user should pronounce',
+                  ),
                   _buildVariableChip(
-                      '{performance_data}', 'User performance metrics'),
+                    '{spoken_text}',
+                    'The text transcribed from user speech',
+                  ),
+                  _buildVariableChip(
+                    '{performance_data}',
+                    'User performance metrics',
+                  ),
                   _buildVariableChip('{topic}', 'Quiz topic'),
                   _buildVariableChip('{difficulty}', 'Difficulty level (1-5)'),
                 ],
@@ -500,10 +504,7 @@ class _PromptEditorScreenState extends State<_PromptEditorScreen> {
                     hintText: 'Enter your AI prompt here...',
                     border: OutlineInputBorder(),
                   ),
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
                 ),
               ),
             ),
@@ -526,18 +527,12 @@ class _PromptEditorScreenState extends State<_PromptEditorScreen> {
             ),
             child: Text(
               variable,
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 12,
-              ),
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              description,
-              style: const TextStyle(fontSize: 12),
-            ),
+            child: Text(description, style: const TextStyle(fontSize: 12)),
           ),
         ],
       ),

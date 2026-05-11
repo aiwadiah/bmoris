@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/ai_service.dart';
+import '../widgets/bmoris_back_button.dart';
 
 class TranslationScreen extends StatefulWidget {
   const TranslationScreen({super.key});
@@ -63,6 +64,7 @@ class _TranslationScreenState extends State<TranslationScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
+        leading: const BMorisBackButton(),
         title: Text(
           'BMoris Translate',
           style: GoogleFonts.poppins(
@@ -88,98 +90,98 @@ class _TranslationScreenState extends State<TranslationScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-            // Input Field
-            TextField(
-              controller: _textController,
-              maxLines: 5,
-              decoration: InputDecoration(
-                hintText: 'Enter text to translate...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade200),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: const Color(0xFF00897B), width: 2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Translation Result
-            if (_translatedText.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF00897B).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: const Color(0xFF00897B).withValues(alpha: 0.3),
+              // Input Field
+              TextField(
+                controller: _textController,
+                maxLines: 5,
+                decoration: InputDecoration(
+                  hintText: 'Enter text to translate...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: const Color(0xFF00897B),
+                      width: 2,
+                    ),
                   ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.translate,
-                          color: Color(0xFF00897B),
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Translation ($_toLanguage)',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
+              ),
+              const SizedBox(height: 24),
+
+              // Translation Result
+              if (_translatedText.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00897B).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFF00897B).withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.translate,
                             color: Color(0xFF00897B),
+                            size: 20,
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _translatedText,
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                  ],
+                          const SizedBox(width: 8),
+                          Text(
+                            'Translation ($_toLanguage)',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF00897B),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _translatedText,
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            // Quick Phrases
-            const Text(
-              'Common Phrases',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+              // Quick Phrases
+              const Text(
+                'Common Phrases',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _buildQuickPhrase('Hello', 'Halo'),
-                _buildQuickPhrase('Thank you', 'Terima kasih'),
-                _buildQuickPhrase('Good morning', 'Selamat pagi'),
-                _buildQuickPhrase('How are you?', 'Apa khabar?'),
-                _buildQuickPhrase('Goodbye', 'Selamat tinggal'),
-                _buildQuickPhrase('Please', 'Tolong'),
-              ],
-            ),
-          ],
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _buildQuickPhrase('Hello', 'Halo'),
+                  _buildQuickPhrase('Thank you', 'Terima kasih'),
+                  _buildQuickPhrase('Good morning', 'Selamat pagi'),
+                  _buildQuickPhrase('How are you?', 'Apa khabar?'),
+                  _buildQuickPhrase('Goodbye', 'Selamat tinggal'),
+                  _buildQuickPhrase('Please', 'Tolong'),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-    bottomNavigationBar: Container(
+      bottomNavigationBar: Container(
         padding: const EdgeInsets.fromLTRB(24, 48, 24, 72),
         decoration: BoxDecoration(
           color: const Color(0xFFF5F5F5),
@@ -277,22 +279,25 @@ class _TranslationScreenState extends State<TranslationScreen> {
                 ),
                 elevation: 0,
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              child:
+                  _isLoading
+                      ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                      : Text(
+                        'Translate',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    )
-                  : Text(
-                      'Translate',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
             ),
           ],
         ),

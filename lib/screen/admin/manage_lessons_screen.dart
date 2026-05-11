@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/lesson_model.dart';
 import '../../services/firestore_service.dart';
+import '../../widgets/bmoris_back_button.dart';
 
 class ManageLessonsScreen extends StatefulWidget {
   const ManageLessonsScreen({super.key});
@@ -33,21 +34,22 @@ class _ManageLessonsScreenState extends State<ManageLessonsScreen> {
   Future<void> _deleteLesson(LessonModel lesson) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Lesson'),
-        content: Text('Are you sure you want to delete "${lesson.title}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Lesson'),
+            content: Text('Are you sure you want to delete "${lesson.title}"?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
     );
 
     if (confirm == true) {
@@ -111,10 +113,7 @@ class _ManageLessonsScreenState extends State<ManageLessonsScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
           );
         }
       }
@@ -125,25 +124,27 @@ class _ManageLessonsScreenState extends State<ManageLessonsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: const BMorisBackButton(),
         title: const Text('Manage Lessons'),
         backgroundColor: const Color(0xFF00796B),
         foregroundColor: Colors.white,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _lessons.isEmpty
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _lessons.isEmpty
               ? _buildEmptyState()
               : RefreshIndicator(
-                  onRefresh: _loadLessons,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _lessons.length,
-                    itemBuilder: (context, index) {
-                      final lesson = _lessons[index];
-                      return _buildLessonCard(lesson);
-                    },
-                  ),
+                onRefresh: _loadLessons,
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _lessons.length,
+                  itemBuilder: (context, index) {
+                    final lesson = _lessons[index];
+                    return _buildLessonCard(lesson);
+                  },
                 ),
+              ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _addOrEditLesson(),
         backgroundColor: const Color(0xFF00796B),
@@ -222,28 +223,29 @@ class _ManageLessonsScreenState extends State<ManageLessonsScreen> {
           ],
         ),
         trailing: PopupMenuButton(
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'edit',
-              child: Row(
-                children: [
-                  Icon(Icons.edit, size: 20),
-                  SizedBox(width: 8),
-                  Text('Edit'),
-                ],
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(Icons.delete, color: Colors.red, size: 20),
-                  SizedBox(width: 8),
-                  Text('Delete', style: TextStyle(color: Colors.red)),
-                ],
-              ),
-            ),
-          ],
+          itemBuilder:
+              (context) => [
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit, size: 20),
+                      SizedBox(width: 8),
+                      Text('Edit'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete, color: Colors.red, size: 20),
+                      SizedBox(width: 8),
+                      Text('Delete', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
+              ],
           onSelected: (value) {
             if (value == 'edit') {
               _addOrEditLesson(lesson);
@@ -344,7 +346,9 @@ class _LessonFormScreenState extends State<_LessonFormScreen> {
         'difficulty': _difficulty,
         'xpReward': int.parse(_xpRewardController.text.trim()),
         'contents': _contents.map((c) => c.toMap()).toList(),
-        'createdAt': widget.lesson?.createdAt.toIso8601String() ?? DateTime.now().toIso8601String(),
+        'createdAt':
+            widget.lesson?.createdAt.toIso8601String() ??
+            DateTime.now().toIso8601String(),
       });
     }
   }
@@ -353,14 +357,12 @@ class _LessonFormScreenState extends State<_LessonFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: const BMorisBackButton(),
         title: Text(widget.lesson == null ? 'Add Lesson' : 'Edit Lesson'),
         backgroundColor: const Color(0xFF00796B),
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: _saveLesson,
-          ),
+          IconButton(icon: const Icon(Icons.check), onPressed: _saveLesson),
         ],
       ),
       body: Form(
@@ -417,12 +419,15 @@ class _LessonFormScreenState extends State<_LessonFormScreen> {
                 labelText: 'Difficulty',
                 border: OutlineInputBorder(),
               ),
-              items: List.generate(5, (i) => i + 1)
-                  .map((level) => DropdownMenuItem(
-                        value: level,
-                        child: Text('Level $level'),
-                      ))
-                  .toList(),
+              items:
+                  List.generate(5, (i) => i + 1)
+                      .map(
+                        (level) => DropdownMenuItem(
+                          value: level,
+                          child: Text('Level $level'),
+                        ),
+                      )
+                      .toList(),
               onChanged: (value) {
                 setState(() {
                   _difficulty = value!;
@@ -471,7 +476,11 @@ class _LessonFormScreenState extends State<_LessonFormScreen> {
                 child: Center(
                   child: Column(
                     children: [
-                      Icon(Icons.content_paste, size: 48, color: Colors.grey.shade400),
+                      Icon(
+                        Icons.content_paste,
+                        size: 48,
+                        color: Colors.grey.shade400,
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         'No contents yet',
@@ -505,7 +514,11 @@ class _LessonFormScreenState extends State<_LessonFormScreen> {
                           onPressed: () => _editContent(index),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                          icon: const Icon(
+                            Icons.delete,
+                            color: Colors.red,
+                            size: 20,
+                          ),
                           onPressed: () => _deleteContent(index),
                         ),
                       ],
@@ -575,7 +588,10 @@ class _ContentFormDialogState extends State<_ContentFormDialog> {
                 items: const [
                   DropdownMenuItem(value: 'text', child: Text('Text')),
                   DropdownMenuItem(value: 'audio', child: Text('Audio')),
-                  DropdownMenuItem(value: 'pronunciation', child: Text('Pronunciation')),
+                  DropdownMenuItem(
+                    value: 'pronunciation',
+                    child: Text('Pronunciation'),
+                  ),
                 ],
                 onChanged: (value) {
                   setState(() {
@@ -631,9 +647,10 @@ class _ContentFormDialogState extends State<_ContentFormDialog> {
                   type: _type,
                   malay: _malayController.text.trim(),
                   english: _englishController.text.trim(),
-                  audioUrl: _audioUrlController.text.trim().isEmpty
-                      ? null
-                      : _audioUrlController.text.trim(),
+                  audioUrl:
+                      _audioUrlController.text.trim().isEmpty
+                          ? null
+                          : _audioUrlController.text.trim(),
                 ),
               );
             }

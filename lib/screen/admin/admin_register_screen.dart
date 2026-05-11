@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/bmoris_back_button.dart';
 
 class AdminRegisterScreen extends StatefulWidget {
   const AdminRegisterScreen({super.key});
@@ -66,10 +67,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF00796B)),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: const BMorisBackButton(),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -246,21 +244,25 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: auth.isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                      child:
+                          auth.isLoading
+                              ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                              : const Text(
+                                'Register as Admin',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
                               ),
-                            )
-                          : const Text(
-                              'Register as Admin',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 16),
-                            ),
                     );
                   },
                 ),

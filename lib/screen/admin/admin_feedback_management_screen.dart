@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/feedback_model.dart';
 import '../../services/firestore_service.dart';
+import '../../widgets/bmoris_back_button.dart';
 
 class AdminFeedbackManagementScreen extends StatefulWidget {
   const AdminFeedbackManagementScreen({super.key});
@@ -192,6 +193,7 @@ class _AdminFeedbackManagementScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: const BMorisBackButton(),
         title: const Text('Feedback Management'),
         backgroundColor: const Color(0xFF00796B),
         foregroundColor: Colors.white,
