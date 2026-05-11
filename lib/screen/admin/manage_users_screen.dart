@@ -100,10 +100,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
 
     if (result != null) {
       try {
-        await _firestoreService.firestore
-            .collection('users')
-            .doc(user.uid)
-            .update(result);
+        await _firestoreService.syncWeeklyXpFromAdminDelta(
+          user: user,
+          updates: result,
+        );
         _loadUsers();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

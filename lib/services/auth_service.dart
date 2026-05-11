@@ -1,10 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
+import 'firestore_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirestoreService _firestoreService = FirestoreService();
 
   User? get currentUser => _auth.currentUser;
 
@@ -175,8 +177,47 @@ class AuthService {
   }
 
   Future<void> addXp(String uid, int xp) async {
-    await _firestore.collection('users').doc(uid).update({
-      'xp': FieldValue.increment(xp),
+    await _firestore.runTransaction((transaction) async {
+      final userRef = _firestore.collection('users').doc(uid);
+      final userDoc = await transaction.get(userRef);
+      if (!userDoc.exists) {
+        return;
+      }
+
+      final data = userDoc.data()!;
+      transaction.update(userRef, {
+        'xp': FieldValue.increment(xp),
+      });
+
+      if ((data['role'] ?? 'user') != 'user') {
+        return;
+      }
+
+      final weekId = FirestoreService.getWeekId();
+      final weeklyRef = _firestoreService
+          .firestore
+          .collection('weekly_leaderboards')
+          .doc(weekId)
+          .collection('entries')
+          .doc(uid);
+      final weeklyDoc = await transaction.get(weeklyRef);
+      final currentWeeklyXp = weeklyDoc.exists
+          ? ((weeklyDoc.data()?['xp'] ?? 0) as int)
+          : 0;
+
+      transaction.set(
+        weeklyRef,
+        {
+          'userId': uid,
+          'name': data['name'] ?? '',
+          'photoUrl': data['photoUrl'],
+          'xp': currentWeeklyXp + xp,
+          'streak': data['streak'] ?? 0,
+          'currentLevel': data['currentLevel'] ?? 1,
+          'updatedAt': DateTime.now().toIso8601String(),
+        },
+        SetOptions(merge: true),
+      );
     });
   }
 
