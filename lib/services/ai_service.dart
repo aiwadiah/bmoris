@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'firestore_service.dart';
 
 class AIService {
-  static const String _apiKey = 'AIzaSyAJwvH5pKzspL7H6EOksRpWgm6wv4z_OP0';
+  static const String _apiKey = 'AIzaSyDEPb1ddtXdoUpWrfFyauCUaPxY9jZHxlY';
   static const String _modelName = 'gemini-2.5-flash';
 
   final FirestoreService _firestoreService = FirestoreService();
@@ -14,7 +14,8 @@ class AIService {
   Future<void> listAvailableModels() async {
     try {
       final url = Uri.parse(
-          'https://generativelanguage.googleapis.com/v1/models?key=$_apiKey');
+        'https://generativelanguage.googleapis.com/v1/models?key=$_apiKey',
+      );
       final response = await http.get(url);
       print('=== AVAILABLE MODELS ===');
       print('Status: ${response.statusCode}');
@@ -36,10 +37,11 @@ class AIService {
 
       // Fetch chatbot prompt from Firestore (cache it)
       if (_cachedPrompt == null) {
-        final doc = await _firestoreService.firestore
-            .collection('settings')
-            .doc('ai_prompts')
-            .get();
+        final doc =
+            await _firestoreService.firestore
+                .collection('settings')
+                .doc('ai_prompts')
+                .get();
 
         if (doc.exists && doc.data()?['feedback'] != null) {
           _cachedPrompt = doc.data()!['feedback'] as String;
@@ -65,14 +67,15 @@ class AIService {
       final userContent = {
         'role': 'user',
         'parts': [
-          {'text': promptWithMessage}
-        ]
+          {'text': promptWithMessage},
+        ],
       };
       contents.add(userContent);
 
       // Use v1 API endpoint
       final url = Uri.parse(
-          'https://generativelanguage.googleapis.com/v1/models/$_modelName:generateContent?key=$_apiKey');
+        'https://generativelanguage.googleapis.com/v1/models/$_modelName:generateContent?key=$_apiKey',
+      );
 
       print('Sending to Gemini API v1 with model: $_modelName');
       print('URL: $url');
@@ -82,10 +85,7 @@ class AIService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'contents': contents,
-          'generationConfig': {
-            'temperature': 0.7,
-            'maxOutputTokens': 1024,
-          }
+          'generationConfig': {'temperature': 0.7, 'maxOutputTokens': 1024},
         }),
       );
 
@@ -100,7 +100,9 @@ class AIService {
         _chatHistory.add(userContent);
         _chatHistory.add({
           'role': 'model',
-          'parts': [{'text': text}]
+          'parts': [
+            {'text': text},
+          ],
         });
 
         return text ?? 'Maaf, saya tidak faham. (Sorry, I did not understand.)';
@@ -127,37 +129,55 @@ Please check console for full details.''';
     required String fromLanguage,
     required String toLanguage,
   }) async {
-    try {
-      final url = Uri.parse(
-          'https://generativelanguage.googleapis.com/v1/models/$_modelName:generateContent?key=$_apiKey');
+    const translationModels = [
+      _modelName,
+      'gemini-2.0-flash-lite',
+      'gemini-2.0-flash',
+    ];
 
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'contents': [
-            {
-              'parts': [
-                {
-                  'text':
-                      'Translate from $fromLanguage to $toLanguage. Only provide the translation, no explanations: "$text"'
-                }
-              ]
-            }
-          ]
-        }),
-      );
+    final prompt =
+        'Translate from $fromLanguage to $toLanguage. Only provide the translation, no explanations: "$text"';
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['candidates'][0]['content']['parts'][0]['text'] ??
-            'Translation failed.';
-      } else {
-        return 'Translation error. Please try again.';
+    for (final model in translationModels) {
+      try {
+        final url = Uri.parse(
+          'https://generativelanguage.googleapis.com/v1/models/$model:generateContent?key=$_apiKey',
+        );
+
+        final response = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'contents': [
+              {
+                'parts': [
+                  {'text': prompt},
+                ],
+              },
+            ],
+            'generationConfig': {'temperature': 0.2, 'maxOutputTokens': 256},
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final translated =
+              data['candidates']?[0]?['content']?['parts']?[0]?['text'];
+          return translated ?? 'Translation failed.';
+        }
+
+        // 503 means the model/service is temporarily overloaded. Try fallback.
+        if (response.statusCode == 503 || response.statusCode == 429) {
+          continue;
+        }
+
+        return 'Translation error (${response.statusCode}). Please try again.';
+      } catch (_) {
+        continue;
       }
-    } catch (e) {
-      return 'Translation error. Please try again.';
     }
+
+    return 'Translation service is busy. Please try again in a moment.';
   }
 
   void resetChat() {
@@ -172,10 +192,11 @@ Please check console for full details.''';
   }) async {
     try {
       // Fetch quiz generation prompt from Firestore
-      final doc = await _firestoreService.firestore
-          .collection('settings')
-          .doc('ai_prompts')
-          .get();
+      final doc =
+          await _firestoreService.firestore
+              .collection('settings')
+              .doc('ai_prompts')
+              .get();
 
       String prompt;
       if (doc.exists && doc.data()?['quiz_generation'] != null) {
@@ -191,7 +212,8 @@ Please check console for full details.''';
           .replaceAll('{category}', category);
 
       final url = Uri.parse(
-          'https://generativelanguage.googleapis.com/v1/models/$_modelName:generateContent?key=$_apiKey');
+        'https://generativelanguage.googleapis.com/v1/models/$_modelName:generateContent?key=$_apiKey',
+      );
 
       final response = await http.post(
         url,
@@ -200,28 +222,24 @@ Please check console for full details.''';
           'contents': [
             {
               'parts': [
-                {'text': prompt}
-              ]
-            }
+                {'text': prompt},
+              ],
+            },
           ],
-          'generationConfig': {
-            'temperature': 0.7,
-            'maxOutputTokens': 512,
-          }
+          'generationConfig': {'temperature': 0.7, 'maxOutputTokens': 512},
         }),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final aiResponse = data['candidates'][0]['content']['parts'][0]['text'] as String;
+        final aiResponse =
+            data['candidates'][0]['content']['parts'][0]['text'] as String;
 
         // Try to parse JSON from the response
         try {
           // Remove markdown code blocks if present
-          String cleanedResponse = aiResponse
-              .replaceAll('```json', '')
-              .replaceAll('```', '')
-              .trim();
+          String cleanedResponse =
+              aiResponse.replaceAll('```json', '').replaceAll('```', '').trim();
 
           final quizData = jsonDecode(cleanedResponse) as Map<String, dynamic>;
 
@@ -231,7 +249,8 @@ Please check console for full details.''';
               quizData.containsKey('correctIndex')) {
             return {
               'question': quizData['question'] ?? '',
-              'questionMalay': quizData['questionMalay'] ?? quizData['question'],
+              'questionMalay':
+                  quizData['questionMalay'] ?? quizData['question'],
               'options': List<String>.from(quizData['options'] ?? []),
               'correctIndex': quizData['correctIndex'] ?? 0,
               'difficulty': difficulty,

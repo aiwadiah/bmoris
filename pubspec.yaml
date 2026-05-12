@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.8.0 <4.0.0"
+  sdk: ">=3.7.0 <4.0.0"
 
 
 # Dependencies specify other packages that your package needs in order to work.
@@ -45,6 +45,7 @@ dependencies:
   firebase_auth: ^5.3.4
   cloud_firestore: ^5.6.0
   firebase_storage: ^12.3.7
+  firebase_messaging: ^15.2.10
 
   # Speech & Audio
   speech_to_text: ^7.0.0
@@ -66,6 +67,7 @@ dependencies:
   intl: ^0.20.1
   uuid: ^4.5.1
   image_picker: ^1.0.7
+  flutter_local_notifications: ^19.5.0
 
 dev_dependencies:
   flutter_test:
@@ -97,6 +99,17 @@ flutter:
     - assets/dodoHappy.png
     - assets/dodoSad.png
     - assets/icon.png
+    - assets/bmorisbird.png
+    - assets/bmorisbird2.png
+    - assets/bmorisbird3.png
+    - assets/bmorisbird4.png
+    - assets/bmorisbird5.png
+    - assets/bmorisbirdgreat.png
+    - assets/bmorisbirdquiz.png
+    - assets/sebutan.png
+    - assets/chatbot.png
+    - assets/pelajaran.png
+    - assets/quiz.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

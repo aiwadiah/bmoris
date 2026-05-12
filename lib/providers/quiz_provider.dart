@@ -65,7 +65,7 @@ class QuizProvider extends ChangeNotifier {
     }
   }
 
-  void answerQuestion(int selectedIndex, String oderId) {
+  void answerQuestion(int selectedIndex, String userId) {
     if (currentQuiz == null) return;
 
     _userAnswers.add(selectedIndex);
@@ -79,11 +79,13 @@ class QuizProvider extends ChangeNotifier {
     // Save attempt
     final attempt = QuizAttempt(
       id: '',
-      oderId: oderId,
+      userId: userId,
       quizId: currentQuiz!.id,
       selectedIndex: selectedIndex,
       isCorrect: isCorrect,
       attemptedAt: DateTime.now(),
+      difficulty: currentQuiz!.difficulty,
+      category: currentQuiz!.category,
     );
     _firestoreService.saveQuizAttempt(attempt);
 
