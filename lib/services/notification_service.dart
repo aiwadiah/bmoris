@@ -62,7 +62,7 @@ class NotificationService {
       ),
     );
 
-    await _localNotifications.initialize(settings: initializationSettings);
+    await _localNotifications.initialize(initializationSettings);
 
     await _localNotifications
         .resolvePlatformSpecificImplementation<
@@ -87,10 +87,10 @@ class NotificationService {
         'You have a new notification.';
 
     await _localNotifications.show(
-      id: message.hashCode,
-      title: title,
-      body: body,
-      notificationDetails: NotificationDetails(
+      message.hashCode,
+      title,
+      body,
+      NotificationDetails(
         android: AndroidNotificationDetails(
           _announcementChannel.id,
           _announcementChannel.name,

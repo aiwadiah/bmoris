@@ -335,8 +335,23 @@ class _PronunciationScreenState extends State<PronunciationScreen> {
                           textInputAction: TextInputAction.done,
                           decoration: InputDecoration(
                             hintText: 'Type a Malay word or short phrase',
+                            hintStyle: GoogleFonts.poppins(
+                              color: Colors.grey,
+                              fontSize: 14,
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey.shade100,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
                             ),
                             suffixIcon:
                                 _customPhraseController.text.isEmpty
@@ -363,6 +378,9 @@ class _PronunciationScreenState extends State<PronunciationScreen> {
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 14,
                                   ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
                                 child: const Text('Use Preset List'),
                               ),
@@ -375,6 +393,9 @@ class _PronunciationScreenState extends State<PronunciationScreen> {
                                   backgroundColor: const Color(0xFF00897B),
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
                                 child: const Text(

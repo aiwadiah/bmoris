@@ -48,16 +48,30 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Edit Profile', style: AdminUi.title()),
-        content: TextField(
-          controller: nameController,
-          decoration: adminInputDecoration(label: 'Name'),
+        content: Container(
+          width: 400, // Fixed width to make it bigger
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: TextField(
+            controller: nameController,
+            decoration: adminInputDecoration(label: 'Name'),
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: TextStyle(color: AdminUi.muted)),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, nameController.text.trim()),
-            style: ElevatedButton.styleFrom(backgroundColor: AdminUi.teal),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AdminUi.teal,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
             child: const Text('Save', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -122,132 +136,224 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = context.watch<AuthProvider>().user;
-    return AdminPage(
-      child:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : AdminShell(
-                title: 'Admin Profile',
-                subtitle: 'Manage your admin account and team access.',
-                leading: const BMorisBackButton(),
-                child: Column(
-                  children: [
-                    if (currentUser != null)
+    final authProvider = context.watch<AuthProvider>();
+    final currentUser = authProvider.user;
+
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (currentUser == null) {
+      return const Scaffold(
+        body: Center(child: Text('User not found')),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Green Header (from User Profile)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(24, 60, 24, 60),
+              decoration: const BoxDecoration(color: AdminUi.teal),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      const BMorisBackButton.plain(color: Colors.white),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Admin Profile',
+                        style: AdminUi.headline(Colors.white),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 30),
+                  CircleAvatar(
+                    radius: 55,
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.white,
+                      backgroundImage: currentUser.photoUrl != null &&
+                              currentUser.photoUrl!.isNotEmpty
+                          ? NetworkImage(currentUser.photoUrl!)
+                          : null,
+                      child: currentUser.photoUrl == null ||
+                              currentUser.photoUrl!.isEmpty
+                          ? const Icon(
+                              Icons.person,
+                              size: 50,
+                              color: AdminUi.teal,
+                            )
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    currentUser.name,
+                    style: AdminUi.title(Colors.white).copyWith(fontSize: 22),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Super Admin',
+                      style: AdminUi.body(Colors.white).copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Content Area with Overlap
+            Transform.translate(
+              offset: const Offset(0, -30),
+              child: Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF8F9FA),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 30, 24, 0),
+                  child: Column(
+                    children: [
+                      // Admin Team Card (Keep this admin-specific feature)
                       AdminCard(
                         child: Column(
                           children: [
-                            CircleAvatar(
-                              radius: 34,
-                              backgroundColor: AdminUi.teal,
-                              child: Text(
-                                currentUser.name.isEmpty ? 'A' : currentUser.name[0].toUpperCase(),
-                                style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w700),
-                              ),
+                            AdminSectionTitle(
+                              'Admin Team',
+                              trailing: Text('${_allAdmins.length} admins', style: AdminUi.caption()),
                             ),
                             const SizedBox(height: 12),
-                            Text(currentUser.name, style: AdminUi.title()),
-                            const SizedBox(height: 4),
-                            Text(currentUser.email, style: AdminUi.caption()),
-                            const SizedBox(height: 10),
-                            const AdminPill(label: 'Super Admin', selected: true),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () => _editProfile(context),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AdminUi.teal,
-                                  foregroundColor: Colors.white,
-                                  minimumSize: const Size.fromHeight(46),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                ),
-                                child: Text('Edit Profile', style: AdminUi.body(Colors.white)),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton.icon(
-                                onPressed: _signOut,
-                                icon: const Icon(Icons.logout_rounded, size: 18),
-                                label: Text('Log Out', style: AdminUi.body(AdminUi.danger)),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AdminUi.danger,
-                                  side: const BorderSide(color: AdminUi.danger),
-                                  minimumSize: const Size.fromHeight(46),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
+                            if (_allAdmins.isEmpty)
+                              Text('No admin accounts found.', style: AdminUi.body(AdminUi.muted))
+                            else
+                              ..._allAdmins.map((admin) {
+                                final isCurrentUser = admin.uid == currentUser.uid;
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: Row(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 20,
+                                        backgroundColor: isCurrentUser ? const Color(0xFFEAD8A7) : AdminUi.mint,
+                                        child: Text(
+                                          admin.name.isEmpty ? '?' : admin.name[0].toUpperCase(),
+                                          style: const TextStyle(fontWeight: FontWeight.w700, color: AdminUi.text),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Flexible(
+                                                  child: Text(
+                                                    admin.name,
+                                                    style: AdminUi.body(),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                if (isCurrentUser) ...[
+                                                  const SizedBox(width: 8),
+                                                  const AdminPill(label: 'You', selected: true),
+                                                ],
+                                              ],
+                                            ),
+                                            Text(admin.email, style: AdminUi.caption()),
+                                          ],
+                                        ),
+                                      ),
+                                      if (!isCurrentUser)
+                                        IconButton(
+                                          onPressed: () => _deleteAdmin(admin),
+                                          icon: const Icon(Icons.delete_outline_rounded, color: AdminUi.danger),
+                                        ),
+                                    ],
                                   ),
-                                ),
-                              ),
+                                );
+                              }),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Unified Menu Card (from User Profile)
+                      Card(
+                        color: Colors.white,
+                        elevation: 4,
+                        shadowColor: Colors.black.withValues(alpha: 0.05),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildMenuItem(
+                              'Edit Profile',
+                              Icons.edit_outlined,
+                              () => _editProfile(context),
+                            ),
+                            Divider(
+                              height: 1,
+                              thickness: 0.5,
+                              color: Colors.grey.withValues(alpha: 0.2),
+                              indent: 20,
+                              endIndent: 20,
+                            ),
+                            _buildMenuItem(
+                              'Logout',
+                              Icons.logout_rounded,
+                              _signOut,
+                              color: AdminUi.danger,
                             ),
                           ],
                         ),
                       ),
-                    const SizedBox(height: 18),
-                    AdminCard(
-                      child: Column(
-                        children: [
-                          AdminSectionTitle('Admin Team', trailing: Text('${_allAdmins.length} admins', style: AdminUi.caption())),
-                          const SizedBox(height: 12),
-                          if (_allAdmins.isEmpty)
-                            Text('No admin accounts found.', style: AdminUi.body(AdminUi.muted))
-                          else
-                            ..._allAdmins.map((admin) {
-                              final isCurrentUser = admin.uid == currentUser?.uid;
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 20,
-                                      backgroundColor: isCurrentUser ? const Color(0xFFEAD8A7) : AdminUi.mint,
-                                      child: Text(
-                                        admin.name.isEmpty ? '?' : admin.name[0].toUpperCase(),
-                                        style: const TextStyle(fontWeight: FontWeight.w700, color: AdminUi.text),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Flexible(
-                                                child: Text(
-                                                  admin.name,
-                                                  style: AdminUi.body(),
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                              if (isCurrentUser) ...[
-                                                const SizedBox(width: 8),
-                                                const AdminPill(label: 'You', selected: true),
-                                              ],
-                                            ],
-                                          ),
-                                          Text(admin.email, style: AdminUi.caption()),
-                                        ],
-                                      ),
-                                    ),
-                                    if (!isCurrentUser)
-                                      IconButton(
-                                        onPressed: () => _deleteAdmin(admin),
-                                        icon: const Icon(Icons.delete_outline_rounded, color: AdminUi.danger),
-                                      ),
-                                  ],
-                                ),
-                              );
-                            }),
-                        ],
-                      ),
-                    ),
-                  ],
+                      const SizedBox(height: 40),
+                    ],
+                  ),
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(
+    String title,
+    IconData icon,
+    VoidCallback onTap, {
+    Color? color,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      leading: Icon(icon, color: color ?? AdminUi.teal, size: 26),
+      title: Text(
+        title,
+        style: AdminUi.body().copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+          fontSize: 16,
+        ),
+      ),
+      trailing: const Icon(Icons.chevron_right, size: 22, color: AdminUi.muted),
+      onTap: onTap,
     );
   }
 }
