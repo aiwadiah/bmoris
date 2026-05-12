@@ -93,7 +93,7 @@ class _OfflineLessonsScreenState extends State<OfflineLessonsScreen> {
   Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
-        if (Navigator.canPop(context)) const BMorisBackButton(),
+        if (Navigator.canPop(context)) const BMorisBackButton.plain(),
         if (Navigator.canPop(context)) const SizedBox(width: 8),
         Expanded(
           child: Text(

@@ -1,25 +1,35 @@
 import 'package:flutter/material.dart';
-import '../../services/firestore_service.dart';
+
 import '../../models/announcement_model.dart';
+import '../../services/firestore_service.dart';
+import '../../widgets/admin_ui.dart';
 import '../../widgets/bmoris_back_button.dart';
 
 class ManageAnnouncementsScreen extends StatefulWidget {
   const ManageAnnouncementsScreen({super.key});
 
   @override
-  State<ManageAnnouncementsScreen> createState() =>
-      _ManageAnnouncementsScreenState();
+  State<ManageAnnouncementsScreen> createState() => _ManageAnnouncementsScreenState();
 }
 
 class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
   final FirestoreService _firestoreService = FirestoreService();
+  final TextEditingController _searchController = TextEditingController();
   List<AnnouncementModel> _announcements = [];
   bool _isLoading = true;
+  String _filter = 'all';
 
   @override
   void initState() {
     super.initState();
     _loadAnnouncements();
+    _searchController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadAnnouncements() async {
@@ -28,12 +38,21 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
       _announcements = await _firestoreService.getAnnouncements();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading announcements: $e')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading announcements: $e')));
       }
     }
-    setState(() => _isLoading = false);
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  List<AnnouncementModel> get _visibleAnnouncements {
+    final query = _searchController.text.trim().toLowerCase();
+    return _announcements.where((announcement) {
+      if (_filter == 'active' && !announcement.isActive) return false;
+      if (_filter == 'draft' && announcement.isActive) return false;
+      if (query.isEmpty) return true;
+      return announcement.title.toLowerCase().contains(query) ||
+          announcement.content.toLowerCase().contains(query);
+    }).toList();
   }
 
   Future<void> _addAnnouncement() async {
@@ -41,7 +60,6 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
       context: context,
       builder: (context) => const _AnnouncementDialog(),
     );
-
     if (result != null) {
       try {
         final announcement = AnnouncementModel(
@@ -53,17 +71,10 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
           isActive: true,
         );
         await _firestoreService.createAnnouncement(announcement);
-        _loadAnnouncements();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Announcement created successfully')),
-          );
-        }
+        await _loadAnnouncements();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error creating announcement: $e')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error creating announcement: $e')));
         }
       }
     }
@@ -72,30 +83,18 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
   Future<void> _editAnnouncement(AnnouncementModel announcement) async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder:
-          (context) => _AnnouncementDialog(
-            title: announcement.title,
-            content: announcement.content,
-          ),
+      builder: (context) => _AnnouncementDialog(title: announcement.title, content: announcement.content),
     );
-
     if (result != null) {
       try {
-        await _firestoreService.firestore
-            .collection('announcements')
-            .doc(announcement.id)
-            .update({'title': result['title'], 'content': result['content']});
-        _loadAnnouncements();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Announcement updated successfully')),
-          );
-        }
+        await _firestoreService.firestore.collection('announcements').doc(announcement.id).update({
+          'title': result['title'],
+          'content': result['content'],
+        });
+        await _loadAnnouncements();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error updating announcement: $e')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error updating announcement: $e')));
         }
       }
     }
@@ -103,16 +102,13 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
 
   Future<void> _toggleActive(AnnouncementModel announcement) async {
     try {
-      await _firestoreService.firestore
-          .collection('announcements')
-          .doc(announcement.id)
-          .update({'isActive': !announcement.isActive});
-      _loadAnnouncements();
+      await _firestoreService.firestore.collection('announcements').doc(announcement.id).update({
+        'isActive': !announcement.isActive,
+      });
+      await _loadAnnouncements();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error toggling announcement: $e')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error toggling announcement: $e')));
       }
     }
   }
@@ -120,45 +116,25 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
   Future<void> _deleteAnnouncement(String id) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Delete Announcement'),
-            content: const Text(
-              'Are you sure you want to delete this announcement?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text(
-                  'Delete',
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: Text('Delete Announcement', style: AdminUi.title()),
+        content: Text('Are you sure you want to delete this announcement?', style: AdminUi.body()),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
+        ],
+      ),
     );
-
     if (confirm == true) {
       try {
-        await _firestoreService.firestore
-            .collection('announcements')
-            .doc(id)
-            .delete();
-        _loadAnnouncements();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Announcement deleted successfully')),
-          );
-        }
+        await _firestoreService.firestore.collection('announcements').doc(id).delete();
+        await _loadAnnouncements();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error deleting announcement: $e')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting announcement: $e')));
         }
       }
     }
@@ -166,150 +142,128 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: const BMorisBackButton(),
-        title: const Text('Manage Announcements'),
-        backgroundColor: const Color(0xFF00796B),
-        foregroundColor: Colors.white,
-      ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _announcements.isEmpty
-              ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.announcement,
-                      size: 80,
-                      color: Colors.grey.shade400,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'No announcements yet',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Create your first announcement',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ],
-                ),
-              )
-              : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _announcements.length,
-                itemBuilder: (context, index) {
-                  final announcement = _announcements[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor:
-                            announcement.isActive
-                                ? const Color(0xFF00796B)
-                                : Colors.grey,
-                        child: const Icon(
-                          Icons.announcement,
-                          color: Colors.white,
-                        ),
-                      ),
-                      title: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              announcement.title,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Switch(
-                            value: announcement.isActive,
-                            onChanged: (_) => _toggleActive(announcement),
-                            activeTrackColor: const Color(
-                              0xFF00796B,
-                            ).withValues(alpha: 0.5),
-                            activeColor: const Color(0xFF00796B),
-                          ),
-                        ],
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 4),
-                          Text(announcement.content),
-                          const SizedBox(height: 8),
-                          Text(
-                            'By: ${announcement.createdBy} • ${announcement.createdAt.toString().substring(0, 16)}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                      isThreeLine: true,
-                      trailing: PopupMenuButton(
-                        itemBuilder:
-                            (context) => [
-                              const PopupMenuItem(
-                                value: 'edit',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.edit, size: 20),
-                                    SizedBox(width: 8),
-                                    Text('Edit'),
-                                  ],
-                                ),
-                              ),
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.delete,
-                                      size: 20,
-                                      color: Colors.red,
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Delete',
-                                      style: TextStyle(color: Colors.red),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                        onSelected: (value) {
-                          if (value == 'edit') {
-                            _editAnnouncement(announcement);
-                          } else if (value == 'delete') {
-                            _deleteAnnouncement(announcement.id);
-                          }
-                        },
-                      ),
-                    ),
-                  );
-                },
-              ),
+    final announcements = _visibleAnnouncements;
+    return AdminPage(
       floatingActionButton: FloatingActionButton(
         onPressed: _addAnnouncement,
-        backgroundColor: const Color(0xFF00796B),
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: AdminUi.teal,
+        child: const Icon(Icons.add_rounded, color: Colors.white),
       ),
+      child:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : AdminShell(
+                title: 'Announcements',
+                subtitle: 'Publish updates, control visibility, and keep the feed tidy.',
+                leading: const BMorisBackButton(),
+                trailing: AdminActionButton.primary(label: 'Add', icon: Icons.add_rounded, onPressed: _addAnnouncement),
+                child: Column(
+                  children: [
+                    AdminSearchField(controller: _searchController, hintText: 'Search announcements'),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        AdminPill(label: 'All', selected: _filter == 'all', onTap: () => setState(() => _filter = 'all')),
+                        const SizedBox(width: 8),
+                        AdminPill(label: 'Published', selected: _filter == 'active', onTap: () => setState(() => _filter = 'active')),
+                        const SizedBox(width: 8),
+                        AdminPill(label: 'Draft', selected: _filter == 'draft', onTap: () => setState(() => _filter = 'draft')),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    if (announcements.isEmpty)
+                      const AdminEmptyState(
+                        icon: Icons.campaign_outlined,
+                        title: 'No announcements found',
+                        subtitle: 'Create a new announcement or widen the active filters.',
+                      )
+                    else
+                      ...announcements.map((announcement) => AdminCard(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: AdminUi.mint,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Icon(Icons.campaign_rounded, color: AdminUi.teal),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          announcement.title,
+                                          style: AdminUi.body(),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      AdminPill(
+                                        label: announcement.isActive ? 'Published' : 'Draft',
+                                        selected: announcement.isActive,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    announcement.content,
+                                    style: AdminUi.caption(),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          announcement.createdAt.toString().substring(0, 16),
+                                          style: AdminUi.caption(),
+                                        ),
+                                      ),
+                                      Switch(
+                                        value: announcement.isActive,
+                                        onChanged: (_) => _toggleActive(announcement),
+                                        activeThumbColor: AdminUi.teal,
+                                      ),
+                                      PopupMenuButton<String>(
+                                        onSelected: (value) {
+                                          if (value == 'edit') _editAnnouncement(announcement);
+                                          if (value == 'delete') _deleteAnnouncement(announcement.id);
+                                        },
+                                        itemBuilder: (context) => const [
+                                          PopupMenuItem(value: 'edit', child: Text('Edit')),
+                                          PopupMenuItem(value: 'delete', child: Text('Delete')),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+                  ],
+                ),
+              ),
     );
   }
 }
 
 class _AnnouncementDialog extends StatefulWidget {
+  const _AnnouncementDialog({this.title, this.content});
+
   final String? title;
   final String? content;
-
-  const _AnnouncementDialog({this.title, this.content});
 
   @override
   State<_AnnouncementDialog> createState() => _AnnouncementDialogState();
@@ -337,52 +291,29 @@ class _AnnouncementDialogState extends State<_AnnouncementDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(
-        widget.title == null ? 'Add Announcement' : 'Edit Announcement',
-      ),
+      title: Text(widget.title == null ? 'New Announcement' : 'Edit Announcement', style: AdminUi.title()),
       content: Form(
         key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Title',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter title';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _contentController,
-                decoration: const InputDecoration(
-                  labelText: 'Content',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 4,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter content';
-                  }
-                  return null;
-                },
-              ),
-            ],
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _titleController,
+              decoration: adminInputDecoration(label: 'Title'),
+              validator: (value) => value == null || value.isEmpty ? 'Please enter title' : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _contentController,
+              decoration: adminInputDecoration(label: 'Content'),
+              maxLines: 4,
+              validator: (value) => value == null || value.isEmpty ? 'Please enter content' : null,
+            ),
+          ],
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
         ElevatedButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
@@ -392,13 +323,8 @@ class _AnnouncementDialogState extends State<_AnnouncementDialog> {
               });
             }
           },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF00796B),
-          ),
-          child: Text(
-            widget.title == null ? 'Add' : 'Update',
-            style: const TextStyle(color: Colors.white),
-          ),
+          style: ElevatedButton.styleFrom(backgroundColor: AdminUi.teal),
+          child: Text(widget.title == null ? 'Create' : 'Save', style: const TextStyle(color: Colors.white)),
         ),
       ],
     );

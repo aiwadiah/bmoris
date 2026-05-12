@@ -186,7 +186,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             children: [
               Row(
                 children: [
-                  const BMorisBackButton(),
+                  const BMorisBackButton.plain(),
                   const Spacer(),
                   const SizedBox(width: 40),
                 ],

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../../models/lesson_model.dart';
 import '../../services/firestore_service.dart';
+import '../../widgets/admin_ui.dart';
 import '../../widgets/bmoris_back_button.dart';
 
 class ManageLessonsScreen extends StatefulWidget {
@@ -12,69 +14,67 @@ class ManageLessonsScreen extends StatefulWidget {
 
 class _ManageLessonsScreenState extends State<ManageLessonsScreen> {
   final FirestoreService _firestoreService = FirestoreService();
+  final TextEditingController _searchController = TextEditingController();
   List<LessonModel> _lessons = [];
   bool _isLoading = true;
+  String _filter = 'all';
 
   @override
   void initState() {
     super.initState();
     _loadLessons();
+    _searchController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadLessons() async {
     setState(() => _isLoading = true);
     try {
       _lessons = await _firestoreService.getLessons();
-    } catch (e) {
-      // Handle error
-    }
-    setState(() => _isLoading = false);
+    } catch (_) {}
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  List<LessonModel> get _visibleLessons {
+    final query = _searchController.text.trim().toLowerCase();
+    return _lessons.where((lesson) {
+      if (_filter == 'beginner' && lesson.difficulty > 2) return false;
+      if (_filter == 'advanced' && lesson.difficulty < 3) return false;
+      if (query.isEmpty) return true;
+      return lesson.title.toLowerCase().contains(query) ||
+          lesson.titleMalay.toLowerCase().contains(query) ||
+          lesson.category.toLowerCase().contains(query);
+    }).toList();
   }
 
   Future<void> _deleteLesson(LessonModel lesson) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Delete Lesson'),
-            content: Text('Are you sure you want to delete "${lesson.title}"?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('Delete'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: Text('Delete Lesson', style: AdminUi.title()),
+        content: Text('Are you sure you want to delete "${lesson.title}"?', style: AdminUi.body()),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
           ),
+        ],
+      ),
     );
-
     if (confirm == true) {
       try {
-        await _firestoreService.firestore
-            .collection('lessons')
-            .doc(lesson.id)
-            .delete();
-        _loadLessons();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Lesson deleted successfully'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
+        await _firestoreService.firestore.collection('lessons').doc(lesson.id).delete();
+        await _loadLessons();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error deleting lesson: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting lesson: $e')));
         }
       }
     }
@@ -88,33 +88,17 @@ class _ManageLessonsScreenState extends State<ManageLessonsScreen> {
         fullscreenDialog: true,
       ),
     );
-
     if (result != null) {
       try {
         if (lesson == null) {
-          // Add new lesson
           await _firestoreService.firestore.collection('lessons').add(result);
         } else {
-          // Update existing lesson
-          await _firestoreService.firestore
-              .collection('lessons')
-              .doc(lesson.id)
-              .update(result);
+          await _firestoreService.firestore.collection('lessons').doc(lesson.id).update(result);
         }
-        _loadLessons();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(lesson == null ? 'Lesson added' : 'Lesson updated'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
+        await _loadLessons();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
         }
       }
     }
@@ -122,147 +106,118 @@ class _ManageLessonsScreenState extends State<ManageLessonsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: const BMorisBackButton(),
-        title: const Text('Manage Lessons'),
-        backgroundColor: const Color(0xFF00796B),
-        foregroundColor: Colors.white,
-      ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _lessons.isEmpty
-              ? _buildEmptyState()
-              : RefreshIndicator(
-                onRefresh: _loadLessons,
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _lessons.length,
-                  itemBuilder: (context, index) {
-                    final lesson = _lessons[index];
-                    return _buildLessonCard(lesson);
-                  },
-                ),
-              ),
+    final lessons = _visibleLessons;
+    return AdminPage(
       floatingActionButton: FloatingActionButton(
         onPressed: () => _addOrEditLesson(),
-        backgroundColor: const Color(0xFF00796B),
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: AdminUi.teal,
+        child: const Icon(Icons.add_rounded, color: Colors.white),
       ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.book_outlined, size: 80, color: Colors.grey.shade400),
-          const SizedBox(height: 16),
-          const Text(
-            'No lessons yet',
-            style: TextStyle(fontSize: 18, color: Colors.grey),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () => _addOrEditLesson(),
-            icon: const Icon(Icons.add),
-            label: const Text('Add First Lesson'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00796B),
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLessonCard(LessonModel lesson) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: const Color(0xFF00796B),
-          child: Text(
-            '${lesson.difficulty}',
-            style: const TextStyle(color: Colors.white),
-          ),
-        ),
-        title: Text(lesson.title),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(lesson.titleMalay),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Chip(
-                  label: Text(lesson.category),
-                  backgroundColor: Colors.blue.shade50,
-                  labelStyle: const TextStyle(fontSize: 10),
-                  padding: EdgeInsets.zero,
+      child:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : AdminShell(
+                title: 'Manage Lessons',
+                subtitle: 'Organize learning modules, levels, and lesson content.',
+                leading: const BMorisBackButton(),
+                trailing: AdminActionButton.primary(label: 'Add', icon: Icons.add_rounded, onPressed: () => _addOrEditLesson()),
+                child: Column(
+                  children: [
+                    AdminSearchField(controller: _searchController, hintText: 'Search lesson title or category'),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        AdminPill(label: 'All', selected: _filter == 'all', onTap: () => setState(() => _filter = 'all')),
+                        AdminPill(label: 'Beginner', selected: _filter == 'beginner', onTap: () => setState(() => _filter = 'beginner')),
+                        AdminPill(label: 'Advanced', selected: _filter == 'advanced', onTap: () => setState(() => _filter = 'advanced')),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    if (lessons.isEmpty)
+                      AdminEmptyState(
+                        icon: Icons.menu_book_outlined,
+                        title: 'No lessons available',
+                        subtitle: 'Create a new lesson to populate the library.',
+                        action: AdminActionButton.primary(label: 'Add Lesson', onPressed: () => _addOrEditLesson()),
+                      )
+                    else
+                      ...lessons.map((lesson) => AdminCard(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 46,
+                              height: 46,
+                              decoration: BoxDecoration(
+                                color: AdminUi.mint,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Icon(Icons.auto_stories_rounded, color: AdminUi.teal.withValues(alpha: .9)),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          lesson.title,
+                                          style: AdminUi.body(),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      AdminPill(label: lesson.category),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    lesson.titleMalay,
+                                    style: AdminUi.caption(),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Text('${lesson.contents.length} items', style: AdminUi.caption()),
+                                      const SizedBox(width: 10),
+                                      Text('Level ${lesson.difficulty}', style: AdminUi.caption()),
+                                      const SizedBox(width: 10),
+                                      Text('+${lesson.xpReward} XP', style: AdminUi.caption(const Color(0xFFE59B2F))),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            PopupMenuButton<String>(
+                              onSelected: (value) {
+                                if (value == 'edit') _addOrEditLesson(lesson);
+                                if (value == 'delete') _deleteLesson(lesson);
+                              },
+                              itemBuilder: (context) => const [
+                                PopupMenuItem(value: 'edit', child: Text('Edit')),
+                                PopupMenuItem(value: 'delete', child: Text('Delete')),
+                              ],
+                            ),
+                          ],
+                        ),
+                      )),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  '${lesson.contents.length} contents',
-                  style: const TextStyle(fontSize: 12),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '+${lesson.xpReward} XP',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.amber,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        trailing: PopupMenuButton(
-          itemBuilder:
-              (context) => [
-                const PopupMenuItem(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit, size: 20),
-                      SizedBox(width: 8),
-                      Text('Edit'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete, color: Colors.red, size: 20),
-                      SizedBox(width: 8),
-                      Text('Delete', style: TextStyle(color: Colors.red)),
-                    ],
-                  ),
-                ),
-              ],
-          onSelected: (value) {
-            if (value == 'edit') {
-              _addOrEditLesson(lesson);
-            } else if (value == 'delete') {
-              _deleteLesson(lesson);
-            }
-          },
-        ),
-      ),
+              ),
     );
   }
 }
 
 class _LessonFormScreen extends StatefulWidget {
-  final LessonModel? lesson;
-
   const _LessonFormScreen({this.lesson});
+
+  final LessonModel? lesson;
 
   @override
   State<_LessonFormScreen> createState() => _LessonFormScreenState();
@@ -305,15 +260,9 @@ class _LessonFormScreenState extends State<_LessonFormScreen> {
   }
 
   void _addContent() async {
-    final result = await showDialog<LessonContent>(
-      context: context,
-      builder: (context) => _ContentFormDialog(),
-    );
-
+    final result = await showDialog<LessonContent>(context: context, builder: (context) => const _ContentFormDialog());
     if (result != null) {
-      setState(() {
-        _contents.add(result);
-      });
+      setState(() => _contents.add(result));
     }
   }
 
@@ -322,19 +271,12 @@ class _LessonFormScreenState extends State<_LessonFormScreen> {
       context: context,
       builder: (context) => _ContentFormDialog(content: _contents[index]),
     );
-
     if (result != null) {
-      setState(() {
-        _contents[index] = result;
-      });
+      setState(() => _contents[index] = result);
     }
   }
 
-  void _deleteContent(int index) {
-    setState(() {
-      _contents.removeAt(index);
-    });
-  }
+  void _deleteContent(int index) => setState(() => _contents.removeAt(index));
 
   void _saveLesson() {
     if (_formKey.currentState!.validate()) {
@@ -346,198 +288,123 @@ class _LessonFormScreenState extends State<_LessonFormScreen> {
         'difficulty': _difficulty,
         'xpReward': int.parse(_xpRewardController.text.trim()),
         'contents': _contents.map((c) => c.toMap()).toList(),
-        'createdAt':
-            widget.lesson?.createdAt.toIso8601String() ??
-            DateTime.now().toIso8601String(),
+        'createdAt': widget.lesson?.createdAt.toIso8601String() ?? DateTime.now().toIso8601String(),
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
+    return AdminPage(
+      child: AdminShell(
+        title: widget.lesson == null ? 'Add Lesson' : 'Edit Lesson',
+        subtitle: 'Structure lesson details, difficulty, and content blocks.',
         leading: const BMorisBackButton(),
-        title: Text(widget.lesson == null ? 'Add Lesson' : 'Edit Lesson'),
-        backgroundColor: const Color(0xFF00796B),
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(icon: const Icon(Icons.check), onPressed: _saveLesson),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Basic Info Section
-            const Text(
-              'Basic Information',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Title (English)',
-                border: OutlineInputBorder(),
+        trailing: AdminActionButton.primary(label: 'Save', icon: Icons.check_rounded, onPressed: _saveLesson),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              Row(
+                children: const [
+                  AdminPill(label: '1. Details', selected: true),
+                  SizedBox(width: 8),
+                  AdminPill(label: '2. Content'),
+                  SizedBox(width: 8),
+                  AdminPill(label: '3. Publish'),
+                ],
               ),
-              validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _titleMalayController,
-              decoration: const InputDecoration(
-                labelText: 'Title (Malay)',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              AdminCard(
+                child: Column(
+                  children: [
+                    TextFormField(controller: _titleController, decoration: adminInputDecoration(label: 'Title (English)'), validator: _required),
+                    const SizedBox(height: 12),
+                    TextFormField(controller: _titleMalayController, decoration: adminInputDecoration(label: 'Title (Malay)'), validator: _required),
+                    const SizedBox(height: 12),
+                    TextFormField(controller: _descriptionController, decoration: adminInputDecoration(label: 'Description'), maxLines: 2, validator: _required),
+                    const SizedBox(height: 12),
+                    TextFormField(controller: _categoryController, decoration: adminInputDecoration(label: 'Category'), validator: _required),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<int>(
+                      value: _difficulty,
+                      decoration: adminInputDecoration(label: 'Difficulty'),
+                      items: List.generate(5, (i) => i + 1).map((level) => DropdownMenuItem(value: level, child: Text('Level $level'))).toList(),
+                      onChanged: (value) => setState(() => _difficulty = value!),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _xpRewardController,
+                      decoration: adminInputDecoration(label: 'XP Reward'),
+                      keyboardType: TextInputType.number,
+                      validator: _required,
+                    ),
+                  ],
+                ),
               ),
-              validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 2,
-              validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _categoryController,
-              decoration: const InputDecoration(
-                labelText: 'Category',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<int>(
-              value: _difficulty,
-              decoration: const InputDecoration(
-                labelText: 'Difficulty',
-                border: OutlineInputBorder(),
-              ),
-              items:
-                  List.generate(5, (i) => i + 1)
-                      .map(
-                        (level) => DropdownMenuItem(
-                          value: level,
-                          child: Text('Level $level'),
-                        ),
+              const SizedBox(height: 16),
+              AdminCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AdminSectionTitle(
+                      'Lesson Content',
+                      trailing: AdminActionButton.primary(label: 'Add Item', icon: Icons.add_rounded, onPressed: _addContent),
+                    ),
+                    const SizedBox(height: 12),
+                    if (_contents.isEmpty)
+                      const AdminEmptyState(
+                        icon: Icons.library_books_outlined,
+                        title: 'No content items yet',
+                        subtitle: 'Add vocabulary, audio, or pronunciation blocks for this lesson.',
                       )
-                      .toList(),
-              onChanged: (value) {
-                setState(() {
-                  _difficulty = value!;
-                });
-              },
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _xpRewardController,
-              decoration: const InputDecoration(
-                labelText: 'XP Reward',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-              validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
-            ),
-            const SizedBox(height: 24),
-
-            // Lesson Contents Section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Lesson Contents',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                ElevatedButton.icon(
-                  onPressed: _addContent,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Content'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00796B),
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (_contents.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.content_paste,
-                        size: 48,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'No contents yet',
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              ...List.generate(_contents.length, (index) {
-                final content = _contents[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: const Color(0xFF00796B),
-                      child: Text(
-                        '${index + 1}',
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    title: Text(content.malay),
-                    subtitle: Text('${content.english}\nType: ${content.type}'),
-                    isThreeLine: true,
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, size: 20),
-                          onPressed: () => _editContent(index),
-                        ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.delete,
-                            color: Colors.red,
-                            size: 20,
+                    else
+                      ...List.generate(_contents.length, (index) {
+                        final content = _contents[index];
+                        return AdminCard(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundColor: AdminUi.mint,
+                                child: Text('${index + 1}', style: AdminUi.caption(AdminUi.teal)),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(content.malay, style: AdminUi.body(), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    Text(content.english, style: AdminUi.caption(), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  ],
+                                ),
+                              ),
+                              AdminPill(label: content.type),
+                              IconButton(onPressed: () => _editContent(index), icon: const Icon(Icons.edit_outlined, color: AdminUi.teal)),
+                              IconButton(onPressed: () => _deleteContent(index), icon: const Icon(Icons.delete_outline_rounded, color: AdminUi.danger)),
+                            ],
                           ),
-                          onPressed: () => _deleteContent(index),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-          ],
+                        );
+                      }),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  String? _required(String? value) => value == null || value.isEmpty ? 'Required' : null;
 }
 
-// Content Form Dialog
 class _ContentFormDialog extends StatefulWidget {
-  final LessonContent? content;
-
   const _ContentFormDialog({this.content});
+
+  final LessonContent? content;
 
   @override
   State<_ContentFormDialog> createState() => _ContentFormDialogState();
@@ -572,7 +439,7 @@ class _ContentFormDialogState extends State<_ContentFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.content == null ? 'Add Content' : 'Edit Content'),
+      title: Text(widget.content == null ? 'Add Content Item' : 'Edit Content Item', style: AdminUi.title()),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -581,63 +448,28 @@ class _ContentFormDialogState extends State<_ContentFormDialog> {
             children: [
               DropdownButtonFormField<String>(
                 value: _type,
-                decoration: const InputDecoration(
-                  labelText: 'Content Type',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: adminInputDecoration(label: 'Content Type'),
                 items: const [
                   DropdownMenuItem(value: 'text', child: Text('Text')),
                   DropdownMenuItem(value: 'audio', child: Text('Audio')),
-                  DropdownMenuItem(
-                    value: 'pronunciation',
-                    child: Text('Pronunciation'),
-                  ),
+                  DropdownMenuItem(value: 'pronunciation', child: Text('Pronunciation')),
                 ],
-                onChanged: (value) {
-                  setState(() {
-                    _type = value!;
-                  });
-                },
+                onChanged: (value) => setState(() => _type = value!),
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _malayController,
-                decoration: const InputDecoration(
-                  labelText: 'Malay Text',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 2,
-                validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
-              ),
+              TextFormField(controller: _malayController, decoration: adminInputDecoration(label: 'Malay Text'), validator: _required),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _englishController,
-                decoration: const InputDecoration(
-                  labelText: 'English Translation',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 2,
-                validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
-              ),
-              const SizedBox(height: 12),
-              if (_type == 'audio' || _type == 'pronunciation')
-                TextFormField(
-                  controller: _audioUrlController,
-                  decoration: const InputDecoration(
-                    labelText: 'Audio URL (optional)',
-                    border: OutlineInputBorder(),
-                    hintText: 'https://...',
-                  ),
-                ),
+              TextFormField(controller: _englishController, decoration: adminInputDecoration(label: 'English Translation'), validator: _required),
+              if (_type == 'audio' || _type == 'pronunciation') ...[
+                const SizedBox(height: 12),
+                TextFormField(controller: _audioUrlController, decoration: adminInputDecoration(label: 'Audio URL')),
+              ],
             ],
           ),
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
         ElevatedButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
@@ -647,21 +479,17 @@ class _ContentFormDialogState extends State<_ContentFormDialog> {
                   type: _type,
                   malay: _malayController.text.trim(),
                   english: _englishController.text.trim(),
-                  audioUrl:
-                      _audioUrlController.text.trim().isEmpty
-                          ? null
-                          : _audioUrlController.text.trim(),
+                  audioUrl: _audioUrlController.text.trim().isEmpty ? null : _audioUrlController.text.trim(),
                 ),
               );
             }
           },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF00796B),
-            foregroundColor: Colors.white,
-          ),
+          style: ElevatedButton.styleFrom(backgroundColor: AdminUi.teal, foregroundColor: Colors.white),
           child: const Text('Save'),
         ),
       ],
     );
   }
+
+  String? _required(String? value) => value == null || value.isEmpty ? 'Required' : null;
 }

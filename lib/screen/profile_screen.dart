@@ -199,7 +199,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        leading: const BMorisBackButton(),
+
+        leadingWidth: BMorisBackButton.plainLeadingWidth,
+        leading: const BMorisBackButton.plain(color: Colors.white),
         title: const Text('Profile'),
         backgroundColor: const Color(0xFF00796B),
         foregroundColor: Colors.white,
