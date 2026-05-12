@@ -1,5 +1,6 @@
 import 'package:bmoris/models/feedback_model.dart';
 import 'package:bmoris/screen/admin/admin_feedback_detail_screen.dart';
+import 'package:bmoris/widgets/bmoris_back_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -39,7 +40,8 @@ void main() {
     expect(find.text('Message'), findsOneWidget);
     expect(find.text('The history page works well.'), findsOneWidget);
     expect(find.text('Timeline'), findsOneWidget);
-    expect(find.textContaining('Submitted:'), findsOneWidget);
+    expect(find.text('Submitted'), findsOneWidget);
+    expect(find.textContaining('May'), findsOneWidget);
     expect(find.text('Admin Response'), findsNothing);
   });
 
@@ -59,6 +61,42 @@ void main() {
       find.text('Thanks. We will keep monitoring this flow.'),
       findsOneWidget,
     );
-    expect(find.textContaining('Responded:'), findsOneWidget);
+    expect(find.text('Responded'), findsOneWidget);
+  });
+
+  testWidgets('plain back button pops the current route', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder:
+              (context) => Scaffold(
+                body: Center(
+                  child: ElevatedButton(
+                    onPressed:
+                        () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder:
+                                (_) => const Scaffold(
+                                  body: BMorisBackButton.plain(),
+                                ),
+                          ),
+                        ),
+                    child: const Text('Open'),
+                  ),
+                ),
+              ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    expect(find.byType(BMorisBackButton), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.arrow_back_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Open'), findsOneWidget);
   });
 }
