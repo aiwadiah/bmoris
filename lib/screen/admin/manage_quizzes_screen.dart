@@ -53,8 +53,10 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
   List<QuizModel> get _filteredQuizzes {
     final query = _searchController.text.trim().toLowerCase();
     return _quizzes.where((quiz) {
-      if (_selectedDifficulty != null && quiz.difficulty != _selectedDifficulty) return false;
-      if (_selectedCategory != null && quiz.category != _selectedCategory) return false;
+      if (_selectedDifficulty != null && quiz.difficulty != _selectedDifficulty)
+        return false;
+      if (_selectedCategory != null && quiz.category != _selectedCategory)
+        return false;
       if (query.isEmpty) return true;
       return quiz.question.toLowerCase().contains(query) ||
           quiz.questionMalay.toLowerCase().contains(query) ||
@@ -65,26 +67,38 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
   Future<void> _deleteQuiz(QuizModel quiz) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Delete Quiz', style: AdminUi.title()),
-        content: Text('Are you sure you want to delete this quiz?', style: AdminUi.body()),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+      builder:
+          (context) => AlertDialog(
+            title: Text('Delete Quiz', style: AdminUi.title()),
+            content: Text(
+              'Are you sure you want to delete this quiz?',
+              style: AdminUi.body(),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
     if (confirm == true) {
       try {
-        await _firestoreService.firestore.collection('quizzes').doc(quiz.id).delete();
+        await _firestoreService.firestore
+            .collection('quizzes')
+            .doc(quiz.id)
+            .delete();
         await _loadQuizzes();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting quiz: $e')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error deleting quiz: $e')));
         }
       }
     }
@@ -109,7 +123,9 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
     if (mounted) setState(() => _isGenerating = false);
@@ -128,12 +144,17 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
         if (quiz == null) {
           await _firestoreService.firestore.collection('quizzes').add(result);
         } else {
-          await _firestoreService.firestore.collection('quizzes').doc(quiz.id).update(result);
+          await _firestoreService.firestore
+              .collection('quizzes')
+              .doc(quiz.id)
+              .update(result);
         }
         await _loadQuizzes();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
         }
       }
     }
@@ -152,8 +173,18 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
             backgroundColor: const Color(0xFFE1B647),
             child:
                 _isGenerating
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Icon(Icons.auto_awesome_rounded, color: Colors.white),
+                    ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                    : const Icon(
+                      Icons.auto_awesome_rounded,
+                      color: Colors.white,
+                    ),
           ),
           const SizedBox(height: 10),
           FloatingActionButton(
@@ -169,11 +200,15 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
               ? const Center(child: CircularProgressIndicator())
               : AdminShell(
                 title: 'Manage Quizzes',
-                subtitle: 'Curate quiz banks, filters, and AI-generated question sets.',
+                subtitle:
+                    'Curate quiz banks, filters, and AI-generated question sets.',
                 leading: const BMorisBackButton(),
                 child: Column(
                   children: [
-                    AdminSearchField(controller: _searchController, hintText: 'Search quiz question or category'),
+                    AdminSearchField(
+                      controller: _searchController,
+                      hintText: 'Search quiz question or category',
+                    ),
                     const SizedBox(height: 12),
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
@@ -182,7 +217,9 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
                           AdminPill(
                             label: 'All Levels',
                             selected: _selectedDifficulty == null,
-                            onTap: () => setState(() => _selectedDifficulty = null),
+                            onTap:
+                                () =>
+                                    setState(() => _selectedDifficulty = null),
                           ),
                           const SizedBox(width: 8),
                           ...List.generate(5, (i) => i + 1).map(
@@ -191,7 +228,10 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
                               child: AdminPill(
                                 label: 'Level $level',
                                 selected: _selectedDifficulty == level,
-                                onTap: () => setState(() => _selectedDifficulty = level),
+                                onTap:
+                                    () => setState(
+                                      () => _selectedDifficulty = level,
+                                    ),
                               ),
                             ),
                           ),
@@ -207,7 +247,9 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
                             AdminPill(
                               label: 'All Categories',
                               selected: _selectedCategory == null,
-                              onTap: () => setState(() => _selectedCategory = null),
+                              onTap:
+                                  () =>
+                                      setState(() => _selectedCategory = null),
                             ),
                             const SizedBox(width: 8),
                             ..._categories.map(
@@ -216,7 +258,10 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
                                 child: AdminPill(
                                   label: category,
                                   selected: _selectedCategory == category,
-                                  onTap: () => setState(() => _selectedCategory = category),
+                                  onTap:
+                                      () => setState(
+                                        () => _selectedCategory = category,
+                                      ),
                                 ),
                               ),
                             ),
@@ -230,59 +275,88 @@ class _ManageQuizzesScreenState extends State<ManageQuizzesScreen> {
                         icon: Icons.quiz_outlined,
                         title: 'No quizzes available',
                         subtitle: 'Add a manual quiz or generate one with AI.',
-                        action: AdminActionButton.primary(label: 'Add Quiz', onPressed: () => _addOrEditQuiz()),
+                        action: AdminActionButton.primary(
+                          label: 'Add Quiz',
+                          onPressed: () => _addOrEditQuiz(),
+                        ),
                       )
                     else
-                      ...quizzes.map((quiz) => AdminCard(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 46,
-                              height: 46,
-                              decoration: BoxDecoration(
-                                color: _difficultyColor(quiz.difficulty).withValues(alpha: .14),
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  '${quiz.difficulty}',
-                                  style: AdminUi.title(_difficultyColor(quiz.difficulty)),
+                      ...quizzes.map(
+                        (quiz) => AdminCard(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 46,
+                                height: 46,
+                                decoration: BoxDecoration(
+                                  color: _difficultyColor(
+                                    quiz.difficulty,
+                                  ).withValues(alpha: .14),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${quiz.difficulty}',
+                                    style: AdminUi.title(
+                                      _difficultyColor(quiz.difficulty),
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(quiz.question, style: AdminUi.body(), maxLines: 2, overflow: TextOverflow.ellipsis),
-                                  const SizedBox(height: 4),
-                                  Text(quiz.questionMalay, style: AdminUi.caption(), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      AdminPill(label: quiz.category),
-                                      const SizedBox(width: 8),
-                                      Text('${quiz.options.length} options', style: AdminUi.caption()),
-                                    ],
-                                  ),
-                                ],
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      quiz.question,
+                                      style: AdminUi.body(),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      quiz.questionMalay,
+                                      style: AdminUi.caption(),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        AdminPill(label: quiz.category),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '${quiz.options.length} options',
+                                          style: AdminUi.caption(),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            PopupMenuButton<String>(
-                              onSelected: (value) {
-                                if (value == 'edit') _addOrEditQuiz(quiz);
-                                if (value == 'delete') _deleteQuiz(quiz);
-                              },
-                              itemBuilder: (context) => const [
-                                PopupMenuItem(value: 'edit', child: Text('Edit')),
-                                PopupMenuItem(value: 'delete', child: Text('Delete')),
-                              ],
-                            ),
-                          ],
+                              PopupMenuButton<String>(
+                                onSelected: (value) {
+                                  if (value == 'edit') _addOrEditQuiz(quiz);
+                                  if (value == 'delete') _deleteQuiz(quiz);
+                                },
+                                itemBuilder:
+                                    (context) => const [
+                                      PopupMenuItem(
+                                        value: 'edit',
+                                        child: Text('Edit'),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'delete',
+                                        child: Text('Delete'),
+                                      ),
+                                    ],
+                              ),
+                            ],
+                          ),
                         ),
-                      )),
+                      ),
                   ],
                 ),
               ),
@@ -336,21 +410,40 @@ class _AIQuizGeneratorDialogState extends State<_AIQuizGeneratorDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextFormField(controller: _topicController, decoration: adminInputDecoration(label: 'Topic'), validator: _required),
+            TextFormField(
+              controller: _topicController,
+              decoration: adminInputDecoration(label: 'Topic'),
+              validator: _required,
+            ),
             const SizedBox(height: 12),
-            TextFormField(controller: _categoryController, decoration: adminInputDecoration(label: 'Category'), validator: _required),
+            TextFormField(
+              controller: _categoryController,
+              decoration: adminInputDecoration(label: 'Category'),
+              validator: _required,
+            ),
             const SizedBox(height: 12),
             DropdownButtonFormField<int>(
               initialValue: _difficulty,
               decoration: adminInputDecoration(label: 'Difficulty'),
-              items: List.generate(5, (i) => i + 1).map((level) => DropdownMenuItem(value: level, child: Text('Level $level'))).toList(),
+              items:
+                  List.generate(5, (i) => i + 1)
+                      .map(
+                        (level) => DropdownMenuItem(
+                          value: level,
+                          child: Text('Level $level'),
+                        ),
+                      )
+                      .toList(),
               onChanged: (value) => setState(() => _difficulty = value!),
             ),
           ],
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         ElevatedButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
@@ -361,14 +454,18 @@ class _AIQuizGeneratorDialogState extends State<_AIQuizGeneratorDialog> {
               });
             }
           },
-          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE1B647), foregroundColor: Colors.white),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFE1B647),
+            foregroundColor: Colors.white,
+          ),
           child: const Text('Generate'),
         ),
       ],
     );
   }
 
-  String? _required(String? value) => value == null || value.isEmpty ? 'Required' : null;
+  String? _required(String? value) =>
+      value == null || value.isEmpty ? 'Required' : null;
 }
 
 class _QuizEditorScreen extends StatefulWidget {
@@ -441,35 +538,56 @@ class _QuizEditorScreenState extends State<_QuizEditorScreen> {
         title: widget.quiz == null ? 'Add Quiz' : 'Edit Quiz',
         subtitle: 'Build a question set and mark the correct answer.',
         leading: const BMorisBackButton(),
-        trailing: AdminActionButton.primary(label: 'Save', icon: Icons.check_rounded, onPressed: _saveQuiz),
+        trailing: AdminActionButton.primary(
+          label: 'Save',
+          icon: Icons.check_rounded,
+          onPressed: _saveQuiz,
+        ),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
-              Row(
-                children: const [
-                  AdminPill(label: '1. Question', selected: true),
-                  SizedBox(width: 8),
-                  AdminPill(label: '2. Answers'),
-                  SizedBox(width: 8),
-                  AdminPill(label: '3. Publish'),
-                ],
-              ),
-              const SizedBox(height: 16),
               AdminCard(
                 child: Column(
                   children: [
-                    TextFormField(controller: _questionController, decoration: adminInputDecoration(label: 'Question (English)'), maxLines: 2, validator: _required),
+                    TextFormField(
+                      controller: _questionController,
+                      decoration: adminInputDecoration(
+                        label: 'Question (English)',
+                      ),
+                      maxLines: 2,
+                      validator: _required,
+                    ),
                     const SizedBox(height: 12),
-                    TextFormField(controller: _questionMalayController, decoration: adminInputDecoration(label: 'Question (Malay)'), maxLines: 2, validator: _required),
+                    TextFormField(
+                      controller: _questionMalayController,
+                      decoration: adminInputDecoration(
+                        label: 'Question (Malay)',
+                      ),
+                      maxLines: 2,
+                      validator: _required,
+                    ),
                     const SizedBox(height: 12),
-                    TextFormField(controller: _categoryController, decoration: adminInputDecoration(label: 'Category'), validator: _required),
+                    TextFormField(
+                      controller: _categoryController,
+                      decoration: adminInputDecoration(label: 'Category'),
+                      validator: _required,
+                    ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<int>(
                       initialValue: _difficulty,
                       decoration: adminInputDecoration(label: 'Difficulty'),
-                      items: List.generate(5, (i) => i + 1).map((level) => DropdownMenuItem(value: level, child: Text('Level $level'))).toList(),
-                      onChanged: (value) => setState(() => _difficulty = value!),
+                      items:
+                          List.generate(5, (i) => i + 1)
+                              .map(
+                                (level) => DropdownMenuItem(
+                                  value: level,
+                                  child: Text('Level $level'),
+                                ),
+                              )
+                              .toList(),
+                      onChanged:
+                          (value) => setState(() => _difficulty = value!),
                     ),
                   ],
                 ),
@@ -481,7 +599,10 @@ class _QuizEditorScreenState extends State<_QuizEditorScreen> {
                   children: [
                     const AdminSectionTitle('Answer Options'),
                     const SizedBox(height: 8),
-                    Text('Select the correct answer using the radio button.', style: AdminUi.caption()),
+                    Text(
+                      'Select the correct answer using the radio button.',
+                      style: AdminUi.caption(),
+                    ),
                     const SizedBox(height: 12),
                     ...List.generate(_optionControllers.length, (index) {
                       return Padding(
@@ -492,12 +613,17 @@ class _QuizEditorScreenState extends State<_QuizEditorScreen> {
                             Radio<int>(
                               value: index,
                               groupValue: _correctIndex,
-                              onChanged: (value) => setState(() => _correctIndex = value!),
+                              onChanged:
+                                  (value) =>
+                                      setState(() => _correctIndex = value!),
                             ),
                             Expanded(
                               child: TextFormField(
                                 controller: _optionControllers[index],
-                                decoration: adminInputDecoration(label: 'Option ${String.fromCharCode(65 + index)}'),
+                                decoration: adminInputDecoration(
+                                  label:
+                                      'Option ${String.fromCharCode(65 + index)}',
+                                ),
                                 validator: _required,
                               ),
                             ),
@@ -515,5 +641,6 @@ class _QuizEditorScreenState extends State<_QuizEditorScreen> {
     );
   }
 
-  String? _required(String? value) => value == null || value.isEmpty ? 'Required' : null;
+  String? _required(String? value) =>
+      value == null || value.isEmpty ? 'Required' : null;
 }

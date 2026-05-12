@@ -55,26 +55,38 @@ class _ManageLessonsScreenState extends State<ManageLessonsScreen> {
   Future<void> _deleteLesson(LessonModel lesson) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Delete Lesson', style: AdminUi.title()),
-        content: Text('Are you sure you want to delete "${lesson.title}"?', style: AdminUi.body()),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+      builder:
+          (context) => AlertDialog(
+            title: Text('Delete Lesson', style: AdminUi.title()),
+            content: Text(
+              'Are you sure you want to delete "${lesson.title}"?',
+              style: AdminUi.body(),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
     if (confirm == true) {
       try {
-        await _firestoreService.firestore.collection('lessons').doc(lesson.id).delete();
+        await _firestoreService.firestore
+            .collection('lessons')
+            .doc(lesson.id)
+            .delete();
         await _loadLessons();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting lesson: $e')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error deleting lesson: $e')));
         }
       }
     }
@@ -93,12 +105,17 @@ class _ManageLessonsScreenState extends State<ManageLessonsScreen> {
         if (lesson == null) {
           await _firestoreService.firestore.collection('lessons').add(result);
         } else {
-          await _firestoreService.firestore.collection('lessons').doc(lesson.id).update(result);
+          await _firestoreService.firestore
+              .collection('lessons')
+              .doc(lesson.id)
+              .update(result);
         }
         await _loadLessons();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
         }
       }
     }
@@ -118,20 +135,40 @@ class _ManageLessonsScreenState extends State<ManageLessonsScreen> {
               ? const Center(child: CircularProgressIndicator())
               : AdminShell(
                 title: 'Manage Lessons',
-                subtitle: 'Organize learning modules, levels, and lesson content.',
+                subtitle:
+                    'Organize learning modules, levels, and lesson content.',
                 leading: const BMorisBackButton(),
-                trailing: AdminActionButton.primary(label: 'Add', icon: Icons.add_rounded, onPressed: () => _addOrEditLesson()),
+                trailing: AdminActionButton.primary(
+                  label: 'Add',
+                  icon: Icons.add_rounded,
+                  onPressed: () => _addOrEditLesson(),
+                ),
                 child: Column(
                   children: [
-                    AdminSearchField(controller: _searchController, hintText: 'Search lesson title or category'),
+                    AdminSearchField(
+                      controller: _searchController,
+                      hintText: 'Search lesson title or category',
+                    ),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        AdminPill(label: 'All', selected: _filter == 'all', onTap: () => setState(() => _filter = 'all')),
-                        AdminPill(label: 'Beginner', selected: _filter == 'beginner', onTap: () => setState(() => _filter = 'beginner')),
-                        AdminPill(label: 'Advanced', selected: _filter == 'advanced', onTap: () => setState(() => _filter = 'advanced')),
+                        AdminPill(
+                          label: 'All',
+                          selected: _filter == 'all',
+                          onTap: () => setState(() => _filter = 'all'),
+                        ),
+                        AdminPill(
+                          label: 'Beginner',
+                          selected: _filter == 'beginner',
+                          onTap: () => setState(() => _filter = 'beginner'),
+                        ),
+                        AdminPill(
+                          label: 'Advanced',
+                          selected: _filter == 'advanced',
+                          onTap: () => setState(() => _filter = 'advanced'),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -139,74 +176,101 @@ class _ManageLessonsScreenState extends State<ManageLessonsScreen> {
                       AdminEmptyState(
                         icon: Icons.menu_book_outlined,
                         title: 'No lessons available',
-                        subtitle: 'Create a new lesson to populate the library.',
-                        action: AdminActionButton.primary(label: 'Add Lesson', onPressed: () => _addOrEditLesson()),
+                        subtitle:
+                            'Create a new lesson to populate the library.',
+                        action: AdminActionButton.primary(
+                          label: 'Add Lesson',
+                          onPressed: () => _addOrEditLesson(),
+                        ),
                       )
                     else
-                      ...lessons.map((lesson) => AdminCard(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 46,
-                              height: 46,
-                              decoration: BoxDecoration(
-                                color: AdminUi.mint,
-                                borderRadius: BorderRadius.circular(14),
+                      ...lessons.map(
+                        (lesson) => AdminCard(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 46,
+                                height: 46,
+                                decoration: BoxDecoration(
+                                  color: AdminUi.mint,
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Icon(
+                                  Icons.auto_stories_rounded,
+                                  color: AdminUi.teal.withValues(alpha: .9),
+                                ),
                               ),
-                              child: Icon(Icons.auto_stories_rounded, color: AdminUi.teal.withValues(alpha: .9)),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          lesson.title,
-                                          style: AdminUi.body(),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            lesson.title,
+                                            style: AdminUi.body(),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
-                                      ),
-                                      AdminPill(label: lesson.category),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    lesson.titleMalay,
-                                    style: AdminUi.caption(),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      Text('${lesson.contents.length} items', style: AdminUi.caption()),
-                                      const SizedBox(width: 10),
-                                      Text('Level ${lesson.difficulty}', style: AdminUi.caption()),
-                                      const SizedBox(width: 10),
-                                      Text('+${lesson.xpReward} XP', style: AdminUi.caption(const Color(0xFFE59B2F))),
-                                    ],
-                                  ),
-                                ],
+                                        AdminPill(label: lesson.category),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      lesson.titleMalay,
+                                      style: AdminUi.caption(),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          '${lesson.contents.length} items',
+                                          style: AdminUi.caption(),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          'Level ${lesson.difficulty}',
+                                          style: AdminUi.caption(),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          '+${lesson.xpReward} XP',
+                                          style: AdminUi.caption(
+                                            const Color(0xFFE59B2F),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            PopupMenuButton<String>(
-                              onSelected: (value) {
-                                if (value == 'edit') _addOrEditLesson(lesson);
-                                if (value == 'delete') _deleteLesson(lesson);
-                              },
-                              itemBuilder: (context) => const [
-                                PopupMenuItem(value: 'edit', child: Text('Edit')),
-                                PopupMenuItem(value: 'delete', child: Text('Delete')),
-                              ],
-                            ),
-                          ],
+                              PopupMenuButton<String>(
+                                onSelected: (value) {
+                                  if (value == 'edit') _addOrEditLesson(lesson);
+                                  if (value == 'delete') _deleteLesson(lesson);
+                                },
+                                itemBuilder:
+                                    (context) => const [
+                                      PopupMenuItem(
+                                        value: 'edit',
+                                        child: Text('Edit'),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'delete',
+                                        child: Text('Delete'),
+                                      ),
+                                    ],
+                              ),
+                            ],
+                          ),
                         ),
-                      )),
+                      ),
                   ],
                 ),
               ),
@@ -260,7 +324,10 @@ class _LessonFormScreenState extends State<_LessonFormScreen> {
   }
 
   void _addContent() async {
-    final result = await showDialog<LessonContent>(context: context, builder: (context) => const _ContentFormDialog());
+    final result = await showDialog<LessonContent>(
+      context: context,
+      builder: (context) => const _ContentFormDialog(),
+    );
     if (result != null) {
       setState(() => _contents.add(result));
     }
@@ -288,7 +355,9 @@ class _LessonFormScreenState extends State<_LessonFormScreen> {
         'difficulty': _difficulty,
         'xpReward': int.parse(_xpRewardController.text.trim()),
         'contents': _contents.map((c) => c.toMap()).toList(),
-        'createdAt': widget.lesson?.createdAt.toIso8601String() ?? DateTime.now().toIso8601String(),
+        'createdAt':
+            widget.lesson?.createdAt.toIso8601String() ??
+            DateTime.now().toIso8601String(),
       });
     }
   }
@@ -300,37 +369,59 @@ class _LessonFormScreenState extends State<_LessonFormScreen> {
         title: widget.lesson == null ? 'Add Lesson' : 'Edit Lesson',
         subtitle: 'Structure lesson details, difficulty, and content blocks.',
         leading: const BMorisBackButton(),
-        trailing: AdminActionButton.primary(label: 'Save', icon: Icons.check_rounded, onPressed: _saveLesson),
+        trailing: AdminActionButton.primary(
+          label: 'Save',
+          icon: Icons.check_rounded,
+          onPressed: _saveLesson,
+        ),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
-              Row(
-                children: const [
-                  AdminPill(label: '1. Details', selected: true),
-                  SizedBox(width: 8),
-                  AdminPill(label: '2. Content'),
-                  SizedBox(width: 8),
-                  AdminPill(label: '3. Publish'),
-                ],
-              ),
-              const SizedBox(height: 16),
               AdminCard(
                 child: Column(
                   children: [
-                    TextFormField(controller: _titleController, decoration: adminInputDecoration(label: 'Title (English)'), validator: _required),
+                    TextFormField(
+                      controller: _titleController,
+                      decoration: adminInputDecoration(
+                        label: 'Title (English)',
+                      ),
+                      validator: _required,
+                    ),
                     const SizedBox(height: 12),
-                    TextFormField(controller: _titleMalayController, decoration: adminInputDecoration(label: 'Title (Malay)'), validator: _required),
+                    TextFormField(
+                      controller: _titleMalayController,
+                      decoration: adminInputDecoration(label: 'Title (Malay)'),
+                      validator: _required,
+                    ),
                     const SizedBox(height: 12),
-                    TextFormField(controller: _descriptionController, decoration: adminInputDecoration(label: 'Description'), maxLines: 2, validator: _required),
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: adminInputDecoration(label: 'Description'),
+                      maxLines: 2,
+                      validator: _required,
+                    ),
                     const SizedBox(height: 12),
-                    TextFormField(controller: _categoryController, decoration: adminInputDecoration(label: 'Category'), validator: _required),
+                    TextFormField(
+                      controller: _categoryController,
+                      decoration: adminInputDecoration(label: 'Category'),
+                      validator: _required,
+                    ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<int>(
                       initialValue: _difficulty,
                       decoration: adminInputDecoration(label: 'Difficulty'),
-                      items: List.generate(5, (i) => i + 1).map((level) => DropdownMenuItem(value: level, child: Text('Level $level'))).toList(),
-                      onChanged: (value) => setState(() => _difficulty = value!),
+                      items:
+                          List.generate(5, (i) => i + 1)
+                              .map(
+                                (level) => DropdownMenuItem(
+                                  value: level,
+                                  child: Text('Level $level'),
+                                ),
+                              )
+                              .toList(),
+                      onChanged:
+                          (value) => setState(() => _difficulty = value!),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -349,14 +440,19 @@ class _LessonFormScreenState extends State<_LessonFormScreen> {
                   children: [
                     AdminSectionTitle(
                       'Lesson Content',
-                      trailing: AdminActionButton.primary(label: 'Add Item', icon: Icons.add_rounded, onPressed: _addContent),
+                      trailing: AdminActionButton.primary(
+                        label: 'Add Item',
+                        icon: Icons.add_rounded,
+                        onPressed: _addContent,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     if (_contents.isEmpty)
                       const AdminEmptyState(
                         icon: Icons.library_books_outlined,
                         title: 'No content items yet',
-                        subtitle: 'Add vocabulary, audio, or pronunciation blocks for this lesson.',
+                        subtitle:
+                            'Add vocabulary, audio, or pronunciation blocks for this lesson.',
                       )
                     else
                       ...List.generate(_contents.length, (index) {
@@ -369,21 +465,46 @@ class _LessonFormScreenState extends State<_LessonFormScreen> {
                               CircleAvatar(
                                 radius: 16,
                                 backgroundColor: AdminUi.mint,
-                                child: Text('${index + 1}', style: AdminUi.caption(AdminUi.teal)),
+                                child: Text(
+                                  '${index + 1}',
+                                  style: AdminUi.caption(AdminUi.teal),
+                                ),
                               ),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(content.malay, style: AdminUi.body(), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                    Text(content.english, style: AdminUi.caption(), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    Text(
+                                      content.malay,
+                                      style: AdminUi.body(),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      content.english,
+                                      style: AdminUi.caption(),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ],
                                 ),
                               ),
                               AdminPill(label: content.type),
-                              IconButton(onPressed: () => _editContent(index), icon: const Icon(Icons.edit_outlined, color: AdminUi.teal)),
-                              IconButton(onPressed: () => _deleteContent(index), icon: const Icon(Icons.delete_outline_rounded, color: AdminUi.danger)),
+                              IconButton(
+                                onPressed: () => _editContent(index),
+                                icon: const Icon(
+                                  Icons.edit_outlined,
+                                  color: AdminUi.teal,
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () => _deleteContent(index),
+                                icon: const Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: AdminUi.danger,
+                                ),
+                              ),
                             ],
                           ),
                         );
@@ -398,7 +519,8 @@ class _LessonFormScreenState extends State<_LessonFormScreen> {
     );
   }
 
-  String? _required(String? value) => value == null || value.isEmpty ? 'Required' : null;
+  String? _required(String? value) =>
+      value == null || value.isEmpty ? 'Required' : null;
 }
 
 class _ContentFormDialog extends StatefulWidget {
@@ -439,7 +561,10 @@ class _ContentFormDialogState extends State<_ContentFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.content == null ? 'Add Content Item' : 'Edit Content Item', style: AdminUi.title()),
+      title: Text(
+        widget.content == null ? 'Add Content Item' : 'Edit Content Item',
+        style: AdminUi.title(),
+      ),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -452,24 +577,41 @@ class _ContentFormDialogState extends State<_ContentFormDialog> {
                 items: const [
                   DropdownMenuItem(value: 'text', child: Text('Text')),
                   DropdownMenuItem(value: 'audio', child: Text('Audio')),
-                  DropdownMenuItem(value: 'pronunciation', child: Text('Pronunciation')),
+                  DropdownMenuItem(
+                    value: 'pronunciation',
+                    child: Text('Pronunciation'),
+                  ),
                 ],
                 onChanged: (value) => setState(() => _type = value!),
               ),
               const SizedBox(height: 12),
-              TextFormField(controller: _malayController, decoration: adminInputDecoration(label: 'Malay Text'), validator: _required),
+              TextFormField(
+                controller: _malayController,
+                decoration: adminInputDecoration(label: 'Malay Text'),
+                validator: _required,
+              ),
               const SizedBox(height: 12),
-              TextFormField(controller: _englishController, decoration: adminInputDecoration(label: 'English Translation'), validator: _required),
+              TextFormField(
+                controller: _englishController,
+                decoration: adminInputDecoration(label: 'English Translation'),
+                validator: _required,
+              ),
               if (_type == 'audio' || _type == 'pronunciation') ...[
                 const SizedBox(height: 12),
-                TextFormField(controller: _audioUrlController, decoration: adminInputDecoration(label: 'Audio URL')),
+                TextFormField(
+                  controller: _audioUrlController,
+                  decoration: adminInputDecoration(label: 'Audio URL'),
+                ),
               ],
             ],
           ),
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         ElevatedButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
@@ -479,17 +621,24 @@ class _ContentFormDialogState extends State<_ContentFormDialog> {
                   type: _type,
                   malay: _malayController.text.trim(),
                   english: _englishController.text.trim(),
-                  audioUrl: _audioUrlController.text.trim().isEmpty ? null : _audioUrlController.text.trim(),
+                  audioUrl:
+                      _audioUrlController.text.trim().isEmpty
+                          ? null
+                          : _audioUrlController.text.trim(),
                 ),
               );
             }
           },
-          style: ElevatedButton.styleFrom(backgroundColor: AdminUi.teal, foregroundColor: Colors.white),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AdminUi.teal,
+            foregroundColor: Colors.white,
+          ),
           child: const Text('Save'),
         ),
       ],
     );
   }
 
-  String? _required(String? value) => value == null || value.isEmpty ? 'Required' : null;
+  String? _required(String? value) =>
+      value == null || value.isEmpty ? 'Required' : null;
 }
