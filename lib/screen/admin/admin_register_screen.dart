@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/auth_provider.dart';
+import '../../widgets/admin_ui.dart';
+import '../../widgets/bmoris_back_button.dart';
 
 class AdminRegisterScreen extends StatefulWidget {
   const AdminRegisterScreen({super.key});
@@ -19,7 +22,6 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
-  // Secret admin code - in production, this should be in env variables
   static const String _adminSecretCode = 'BMORIS_ADMIN_2024';
 
   @override
@@ -34,26 +36,19 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-
-    // Verify admin code
     if (_adminCodeController.text.trim() != _adminSecretCode) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Invalid admin code'),
-          backgroundColor: Colors.red,
-        ),
+        const SnackBar(content: Text('Invalid admin code'), backgroundColor: Colors.red),
       );
       return;
     }
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
     final success = await authProvider.signUpAsAdmin(
       email: _emailController.text.trim(),
       password: _passwordController.text,
       name: _nameController.text.trim(),
     );
-
     if (success && mounted) {
       Navigator.pushReplacementNamed(context, '/admin');
     }
@@ -61,225 +56,163 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AdminPage(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF00796B)),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Icon(
-                  Icons.admin_panel_settings,
-                  size: 80,
-                  color: Color(0xFF00796B),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Admin Registration',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                ),
-                const Text(
-                  'Create a new admin account',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                const SizedBox(height: 30),
-
-                Consumer<AuthProvider>(
-                  builder: (context, auth, _) {
-                    if (auth.error != null) {
-                      return Container(
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(8),
+      child: AdminShell(
+        title: 'Admin Register',
+        subtitle: 'Create a controlled admin account for BMoris operations.',
+        leading: const BMorisBackButton(),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              AdminCard(
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('New admin account', style: AdminUi.title()),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Use the secure admin code to unlock registration.',
+                                style: AdminUi.body(AdminUi.muted),
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Text(
-                          auth.error!,
-                          style: TextStyle(color: Colors.red.shade700),
-                          textAlign: TextAlign.center,
+                        Image.asset(
+                          'assets/bmorisbird3.png',
+                          width: 62,
+                          height: 62,
+                          fit: BoxFit.contain,
                         ),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  },
-                ),
-
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Full Name',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your name';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.lock),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    Consumer<AuthProvider>(
+                      builder: (context, auth, _) {
+                        if (auth.error == null) return const SizedBox.shrink();
+                        return Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 14),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF1F1),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFFF0CACA)),
+                          ),
+                          child: Text(auth.error!, style: AdminUi.body(AdminUi.danger)),
+                        );
                       },
                     ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter password';
-                    }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                TextFormField(
-                  controller: _confirmPasswordController,
-                  obscureText: _obscureConfirmPassword,
-                  decoration: InputDecoration(
-                    labelText: 'Confirm Password',
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureConfirmPassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: adminInputDecoration(
+                        label: 'Full name',
+                        prefixIcon: const Icon(Icons.person_outline_rounded),
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureConfirmPassword = !_obscureConfirmPassword;
-                        });
+                      validator: (value) => value == null || value.isEmpty ? 'Please enter your name' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: adminInputDecoration(
+                        label: 'Email',
+                        prefixIcon: const Icon(Icons.mail_outline_rounded),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) return 'Please enter email';
+                        if (!value.contains('@')) return 'Please enter a valid email';
+                        return null;
                       },
                     ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please confirm password';
-                    }
-                    if (value != _passwordController.text) {
-                      return 'Passwords do not match';
-                    }
-                    return null;
-                  },
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      decoration: adminInputDecoration(
+                        label: 'Password',
+                        prefixIcon: const Icon(Icons.lock_outline_rounded),
+                      ).copyWith(
+                        suffixIcon: IconButton(
+                          icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) return 'Please enter password';
+                        if (value.length < 6) return 'Password must be at least 6 characters';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      obscureText: _obscureConfirmPassword,
+                      decoration: adminInputDecoration(
+                        label: 'Confirm password',
+                        prefixIcon: const Icon(Icons.verified_user_outlined),
+                      ).copyWith(
+                        suffixIcon: IconButton(
+                          icon: Icon(_obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                          onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) return 'Please confirm password';
+                        if (value != _passwordController.text) return 'Passwords do not match';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _adminCodeController,
+                      decoration: adminInputDecoration(
+                        label: 'Admin secret code',
+                        prefixIcon: const Icon(Icons.key_rounded),
+                      ),
+                      validator: (value) => value == null || value.isEmpty ? 'Please enter admin code' : null,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-
-                TextFormField(
-                  controller: _adminCodeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Admin Secret Code',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.security),
-                    hintText: 'Enter admin authorization code',
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter admin code';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-
-                Consumer<AuthProvider>(
-                  builder: (context, auth, _) {
-                    return ElevatedButton(
+              ),
+              const SizedBox(height: 18),
+              Consumer<AuthProvider>(
+                builder: (context, auth, _) {
+                  return SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
                       onPressed: auth.isLoading ? null : _register,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF00796B),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                        backgroundColor: AdminUi.teal,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
                       ),
-                      child: auth.isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Text(
-                              'Register as Admin',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 16),
-                            ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/login');
-                  },
-                  child: const Text(
-                    'Back to Login',
-                    style: TextStyle(
-                      color: Color(0xFF00796B),
-                      fontWeight: FontWeight.bold,
+                      child:
+                          auth.isLoading
+                              ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                              : Text('Register Admin', style: AdminUi.body(Colors.white)),
                     ),
-                  ),
-                ),
-              ],
-            ),
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+                child: Text('Back to Login', style: AdminUi.body(AdminUi.teal)),
+              ),
+            ],
           ),
         ),
       ),

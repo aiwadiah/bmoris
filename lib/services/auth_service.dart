@@ -1,10 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
+import 'firestore_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirestoreService _firestoreService = FirestoreService();
 
   User? get currentUser => _auth.currentUser;
 
@@ -175,14 +177,157 @@ class AuthService {
   }
 
   Future<void> addXp(String uid, int xp) async {
-    await _firestore.collection('users').doc(uid).update({
-      'xp': FieldValue.increment(xp),
+    await _firestore.runTransaction((transaction) async {
+      final userRef = _firestore.collection('users').doc(uid);
+      final userDoc = await transaction.get(userRef);
+      if (!userDoc.exists) {
+        return;
+      }
+
+      final data = userDoc.data()!;
+      transaction.update(userRef, {'xp': FieldValue.increment(xp)});
+
+      if ((data['role'] ?? 'user') != 'user') {
+        return;
+      }
+
+      final weekId = FirestoreService.getWeekId();
+      final weeklyRef = _firestoreService.firestore
+          .collection('weekly_leaderboards')
+          .doc(weekId)
+          .collection('entries')
+          .doc(uid);
+      final weeklyDoc = await transaction.get(weeklyRef);
+      final currentWeeklyXp =
+          weeklyDoc.exists ? ((weeklyDoc.data()?['xp'] ?? 0) as int) : 0;
+
+      transaction.set(weeklyRef, {
+        'userId': uid,
+        'name': data['name'] ?? '',
+        'photoUrl': data['photoUrl'],
+        'xp': currentWeeklyXp + xp,
+        'streak': data['streak'] ?? 0,
+        'currentLevel': data['currentLevel'] ?? 1,
+        'updatedAt': DateTime.now().toIso8601String(),
+      }, SetOptions(merge: true));
     });
+  }
+
+  Future<int> awardQuizLevelBestScoreXp({
+    required String uid,
+    required int difficulty,
+    required int score,
+    required int correctAnswers,
+    required int totalQuestions,
+  }) async {
+    final xpDelta = await _firestore.runTransaction<int>((transaction) async {
+      final userRef = _firestore.collection('users').doc(uid);
+      final userDoc = await transaction.get(userRef);
+      if (!userDoc.exists) {
+        return 0;
+      }
+
+      final userData = userDoc.data()!;
+      final progress = userData['quizLevelProgress'];
+      final levelKey = 'level_$difficulty';
+      final levelProgress =
+          progress is Map<String, dynamic> ? progress[levelKey] : null;
+      final previousBestScore =
+          levelProgress is Map<String, dynamic>
+              ? ((levelProgress['bestScore'] ?? 0) as num).toInt()
+              : 0;
+      final xpDelta = score > previousBestScore ? score - previousBestScore : 0;
+      final now = DateTime.now().toIso8601String();
+
+      if (score > previousBestScore) {
+        transaction.update(userRef, {
+          'quizLevelProgress.$levelKey.bestScore': score,
+          'quizLevelProgress.$levelKey.bestCorrectAnswers': correctAnswers,
+          'quizLevelProgress.$levelKey.totalQuestions': totalQuestions,
+          'quizLevelProgress.$levelKey.updatedAt': now,
+        });
+      }
+
+      if (xpDelta > 0) {
+        transaction.update(userRef, {'xp': FieldValue.increment(xpDelta)});
+      }
+
+      return xpDelta;
+    });
+
+    if (xpDelta > 0) {
+      await _syncWeeklyLeaderboardXpBestEffort(uid: uid, xpDelta: xpDelta);
+    }
+
+    return xpDelta;
+  }
+
+  Future<void> _syncWeeklyLeaderboardXpBestEffort({
+    required String uid,
+    required int xpDelta,
+  }) async {
+    try {
+      await _firestore.runTransaction((transaction) async {
+        final userRef = _firestore.collection('users').doc(uid);
+        final userDoc = await transaction.get(userRef);
+        if (!userDoc.exists) return;
+
+        final userData = userDoc.data()!;
+        if ((userData['role'] ?? 'user') != 'user') return;
+
+        final weekId = FirestoreService.getWeekId();
+        final weeklyRef = _firestore
+            .collection('weekly_leaderboards')
+            .doc(weekId)
+            .collection('entries')
+            .doc(uid);
+        final weeklyDoc = await transaction.get(weeklyRef);
+        final currentWeeklyXp =
+            weeklyDoc.exists
+                ? ((weeklyDoc.data()?['xp'] ?? 0) as num).toInt()
+                : 0;
+
+        transaction.set(weeklyRef, {
+          'userId': uid,
+          'name': userData['name'] ?? '',
+          'photoUrl': userData['photoUrl'],
+          'xp': currentWeeklyXp + xpDelta,
+          'streak': userData['streak'] ?? 0,
+          'currentLevel': userData['currentLevel'] ?? 1,
+          'updatedAt': DateTime.now().toIso8601String(),
+        }, SetOptions(merge: true));
+      });
+    } catch (_) {
+      // Weekly leaderboard sync should not block the user's awarded XP.
+    }
   }
 
   Future<void> addBadge(String uid, String badge) async {
     await _firestore.collection('users').doc(uid).update({
       'badges': FieldValue.arrayUnion([badge]),
+    });
+  }
+
+  Future<void> updateDailyGoal(
+    String uid, {
+    int? count,
+    String? date,
+    int? target,
+  }) async {
+    final updates = <String, dynamic>{};
+    if (count != null) updates['dailyActivitiesCount'] = count;
+    if (date != null) updates['lastActivityDate'] = date;
+    if (target != null) updates['dailyGoalTarget'] = target;
+
+    if (updates.isNotEmpty) {
+      await _firestore.collection('users').doc(uid).update(updates);
+    }
+  }
+
+  Future<void> incrementActivityCount(String uid) async {
+    await _firestore.collection('users').doc(uid).update({
+      'dailyActivitiesCount': FieldValue.increment(1),
+      'lastActivityDate': DateTime.now().toIso8601String().split('T')[0],
     });
   }
 }

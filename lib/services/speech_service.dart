@@ -12,7 +12,7 @@ class SpeechService {
   final FirestoreService _firestoreService = FirestoreService();
   bool _isInitialized = false;
 
-  static const String _apiKey = 'AIzaSyC_CDAIBJTBWUpD8JJt60lN1qyyXB6025M';
+  static const String _apiKey = 'REDACTED_GEMINI_KEY';
   static const String _modelName = 'gemini-2.5-flash';
 
   Future<bool> initialize() async {
@@ -47,6 +47,16 @@ class SpeechService {
 
   bool get isAvailable => _speechToText.isAvailable;
   bool get isListening => _speechToText.isListening;
+
+  String getPronunciationLabel(double accuracyScore) {
+    if (accuracyScore >= 0.8) return 'Great';
+    if (accuracyScore >= 0.5) return 'Good';
+    return 'Bad';
+  }
+
+  Future<void> speakPronunciationLabel(double accuracyScore) async {
+    await speak(getPronunciationLabel(accuracyScore));
+  }
 
   Future<void> startListening({
     required Function(String) onResult,
@@ -217,7 +227,7 @@ class SpeechService {
 
     return PronunciationAttempt(
       id: '',
-      oderId: userId,
+      userId: userId,
       targetText: targetText,
       spokenText: spokenText,
       accuracyScore: accuracyScore,
@@ -285,7 +295,7 @@ class SpeechService {
 
     return PronunciationAttempt(
       id: '',
-      oderId: userId,
+      userId: userId,
       targetText: targetText,
       spokenText: spokenText,
       accuracyScore: accuracyScore,

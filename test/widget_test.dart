@@ -1,30 +1,102 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
+import 'package:bmoris/models/feedback_model.dart';
+import 'package:bmoris/screen/admin/admin_feedback_detail_screen.dart';
+import 'package:bmoris/widgets/bmoris_back_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:bmoris/main.dart';
-
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const BMorisApp());
+  FeedbackModel buildFeedback({String? adminResponse, DateTime? respondedAt}) {
+    return FeedbackModel(
+      id: 'feedback-1',
+      oderId: 'user-1',
+      userName: 'Aisyah',
+      subject: 'Quiz feedback',
+      message: 'The history page works well.',
+      rating: 4,
+      status: adminResponse == null ? 'pending' : 'reviewed',
+      adminResponse: adminResponse,
+      createdAt: DateTime(2026, 5, 10, 9, 30),
+      respondedAt: respondedAt,
+    );
+  }
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  Future<void> pumpFeedbackDetail(
+    WidgetTester tester,
+    FeedbackModel feedback,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(home: AdminFeedbackDetailScreen(feedback: feedback)),
+    );
+  }
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('feedback detail shows submitted feedback content', (
+    WidgetTester tester,
+  ) async {
+    await pumpFeedbackDetail(tester, buildFeedback());
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Feedback Detail'), findsOneWidget);
+    expect(find.text('Quiz feedback'), findsOneWidget);
+    expect(find.text('From: Aisyah'), findsOneWidget);
+    expect(find.text('Message'), findsOneWidget);
+    expect(find.text('The history page works well.'), findsOneWidget);
+    expect(find.text('Timeline'), findsOneWidget);
+    expect(find.text('Submitted'), findsOneWidget);
+    expect(find.textContaining('May'), findsOneWidget);
+    expect(find.text('Admin Response'), findsNothing);
+  });
+
+  testWidgets('feedback detail shows admin response when present', (
+    WidgetTester tester,
+  ) async {
+    await pumpFeedbackDetail(
+      tester,
+      buildFeedback(
+        adminResponse: 'Thanks. We will keep monitoring this flow.',
+        respondedAt: DateTime(2026, 5, 10, 10, 15),
+      ),
+    );
+
+    expect(find.text('Admin Response'), findsOneWidget);
+    expect(
+      find.text('Thanks. We will keep monitoring this flow.'),
+      findsOneWidget,
+    );
+    expect(find.text('Responded'), findsOneWidget);
+  });
+
+  testWidgets('plain back button pops the current route', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder:
+              (context) => Scaffold(
+                body: Center(
+                  child: ElevatedButton(
+                    onPressed:
+                        () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder:
+                                (_) => const Scaffold(
+                                  body: BMorisBackButton.plain(),
+                                ),
+                          ),
+                        ),
+                    child: const Text('Open'),
+                  ),
+                ),
+              ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    expect(find.byType(BMorisBackButton), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.arrow_back_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Open'), findsOneWidget);
   });
 }

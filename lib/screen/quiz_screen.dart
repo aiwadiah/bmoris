@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/quiz_provider.dart';
 import '../providers/auth_provider.dart';
+import 'quiz_history_screen.dart';
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({super.key});
@@ -13,6 +15,11 @@ class QuizScreen extends StatefulWidget {
 class _QuizScreenState extends State<QuizScreen> {
   int? _selectedAnswer;
   bool _hasAnswered = false;
+  bool _hasStarted = false;
+  bool _hasProcessedCompletion = false;
+  bool _isProcessingCompletion = false;
+  int? _awardedXpDelta;
+  bool _xpAwardFailed = false;
 
   @override
   void initState() {
@@ -26,10 +33,34 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('Quiz'),
-        backgroundColor: const Color(0xFF00796B),
-        foregroundColor: Colors.white,
+        automaticallyImplyLeading: false,
+        title: Text(
+          'Quiz Challenge',
+          style: GoogleFonts.poppins(
+            color: const Color(0xFF00897B),
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF00897B),
+        elevation: 0,
+        centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const QuizHistoryScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Consumer<QuizProvider>(
         builder: (context, quizProvider, _) {
@@ -45,6 +76,10 @@ class _QuizScreenState extends State<QuizScreen> {
             return _buildResultScreen(quizProvider);
           }
 
+          if (!_hasStarted) {
+            return _buildStartPage(quizProvider);
+          }
+
           return _buildQuizContent(quizProvider);
         },
       ),
@@ -56,11 +91,7 @@ class _QuizScreenState extends State<QuizScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image.asset(
-            'assets/dodo.png',
-            width: 100,
-            height: 100,
-          ),
+          Image.asset('assets/dodo.png', width: 100, height: 100),
           const SizedBox(height: 16),
           const Text(
             'No quizzes available',
@@ -83,7 +114,8 @@ class _QuizScreenState extends State<QuizScreen> {
       children: [
         // Progress Bar
         LinearProgressIndicator(
-          value: (quizProvider.currentQuizIndex + 1) / quizProvider.totalQuestions,
+          value:
+              (quizProvider.currentQuizIndex + 1) / quizProvider.totalQuestions,
           backgroundColor: Colors.grey.shade200,
           valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00796B)),
         ),
@@ -105,9 +137,14 @@ class _QuizScreenState extends State<QuizScreen> {
                 // Difficulty Badge
                 Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: _getDifficultyColor(quiz.difficulty).withValues(alpha: 0.1),
+                      color: _getDifficultyColor(
+                        quiz.difficulty,
+                      ).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -165,25 +202,44 @@ class _QuizScreenState extends State<QuizScreen> {
         // Next Button
         if (_hasAnswered)
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 48), // Moved up
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: Color(0xFFEEEEEE))),
+            ),
             child: ElevatedButton(
               onPressed: () {
                 quizProvider.nextQuestion();
                 setState(() {
                   _selectedAnswer = null;
                   _hasAnswered = false;
+                  if (quizProvider.isCompleted) {
+                    _hasProcessedCompletion = false;
+                    _isProcessingCompletion = false;
+                    _awardedXpDelta = null;
+                  }
                 });
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00796B),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                minimumSize: const Size(double.infinity, 50),
+                backgroundColor: const Color(0xFF00897B),
+                minimumSize: const Size(
+                  double.infinity,
+                  56,
+                ), // Increased height
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12), // Reduced curve
+                ),
+                elevation: 0,
               ),
               child: Text(
                 quizProvider.currentQuizIndex < quizProvider.totalQuestions - 1
                     ? 'Next Question'
                     : 'See Results',
-                style: const TextStyle(color: Colors.white, fontSize: 16),
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -214,14 +270,15 @@ class _QuizScreenState extends State<QuizScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: _hasAnswered
-            ? null
-            : () {
-                setState(() {
-                  _selectedAnswer = index;
-                });
-                _submitAnswer(quizProvider, index);
-              },
+        onTap:
+            _hasAnswered
+                ? null
+                : () {
+                  setState(() {
+                    _selectedAnswer = index;
+                  });
+                  _submitAnswer(quizProvider, index);
+                },
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.all(16),
@@ -278,9 +335,61 @@ class _QuizScreenState extends State<QuizScreen> {
     });
   }
 
+  Future<void> _processQuizCompletionAward(
+    QuizProvider quizProvider,
+    int completedDifficulty,
+  ) async {
+    if (_hasProcessedCompletion || _isProcessingCompletion) return;
+
+    setState(() {
+      _isProcessingCompletion = true;
+      _xpAwardFailed = false;
+    });
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final xpDelta = await authProvider.awardQuizCompletionXp(
+        difficulty: completedDifficulty,
+        score: quizProvider.score,
+        correctAnswers: quizProvider.correctAnswers,
+        totalQuestions: quizProvider.totalQuestions,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _awardedXpDelta = xpDelta;
+        _xpAwardFailed = false;
+        _hasProcessedCompletion = true;
+        _isProcessingCompletion = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _awardedXpDelta = null;
+        _xpAwardFailed = true;
+        _hasProcessedCompletion = true;
+        _isProcessingCompletion = false;
+      });
+    }
+  }
+
   Widget _buildResultScreen(QuizProvider quizProvider) {
     final percentage = quizProvider.accuracyPercentage;
     final isPassed = percentage >= 70;
+    final completedDifficulty =
+        quizProvider.quizzes.isNotEmpty
+            ? quizProvider.quizzes.first.difficulty
+            : quizProvider.currentDifficulty;
+    final recommendedDifficulty = quizProvider.getRecommendedDifficulty();
+    final hasNextLevel = recommendedDifficulty > completedDifficulty;
+
+    if (!_hasProcessedCompletion && !_isProcessingCompletion) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _processQuizCompletionAward(quizProvider, completedDifficulty);
+        }
+      });
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -288,17 +397,14 @@ class _QuizScreenState extends State<QuizScreen> {
         children: [
           // Dodo Mascot Reaction
           Image.asset(
-            isPassed ? 'assets/dodoHappy.png' : 'assets/dodoSad.png',
-            width: 120,
-            height: 120,
+            isPassed ? 'assets/bmorisbirdgreat.png' : 'assets/dodoSad.png',
+            width: 200,
+            height: 200,
           ),
           const SizedBox(height: 16),
           Text(
             isPassed ? 'Great Job!' : 'Keep Practicing!',
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
@@ -313,7 +419,9 @@ class _QuizScreenState extends State<QuizScreen> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: (isPassed ? Colors.green : Colors.orange).withValues(alpha: 0.1),
+              color: (isPassed ? Colors.green : Colors.orange).withValues(
+                alpha: 0.1,
+              ),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -337,12 +445,15 @@ class _QuizScreenState extends State<QuizScreen> {
                   children: [
                     const Icon(Icons.star, color: Colors.amber),
                     const SizedBox(width: 4),
-                    Text(
-                      '+${quizProvider.score} XP',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.amber,
+                    Flexible(
+                      child: Text(
+                        _buildAwardedXpLabel(),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber,
+                        ),
                       ),
                     ),
                   ],
@@ -375,38 +486,214 @@ class _QuizScreenState extends State<QuizScreen> {
           const SizedBox(height: 32),
 
           // Action Buttons
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    quizProvider.reset();
-                    quizProvider.loadAdaptiveQuizzes(quizProvider.currentDifficulty);
-                  },
-                  child: const Text('Try Again'),
+              OutlinedButton(
+                onPressed:
+                    _isProcessingCompletion
+                        ? null
+                        : () {
+                          setState(() {
+                            _selectedAnswer = null;
+                            _hasAnswered = false;
+                            _hasStarted = false;
+                            _hasProcessedCompletion = false;
+                            _isProcessingCompletion = false;
+                            _awardedXpDelta = null;
+                            _xpAwardFailed = false;
+                          });
+                          quizProvider.reset();
+                          quizProvider.loadAdaptiveQuizzes(completedDifficulty);
+                        },
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  side: const BorderSide(color: Color(0xFF00897B)),
+                  foregroundColor: const Color(0xFF00897B),
+                ),
+                child: Text(
+                  'Try Again',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final authProvider =
-                        Provider.of<AuthProvider>(context, listen: false);
-                    await authProvider.addXp(quizProvider.score);
-                    if (mounted) {
-                      Navigator.pop(context);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00796B),
+              if (hasNextLevel) ...[
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed:
+                      _hasProcessedCompletion
+                          ? () {
+                            setState(() {
+                              _selectedAnswer = null;
+                              _hasAnswered = false;
+                              _hasStarted = true;
+                              _hasProcessedCompletion = false;
+                              _isProcessingCompletion = false;
+                              _awardedXpDelta = null;
+                              _xpAwardFailed = false;
+                            });
+                            quizProvider.loadAdaptiveQuizzes(
+                              recommendedDifficulty,
+                            );
+                          }
+                          : null,
+                  icon: const Icon(Icons.arrow_upward_rounded),
+                  label: Text(
+                    'Next Level',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
                   ),
-                  child: const Text('Finish',
-                      style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00897B),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed:
+                    _isProcessingCompletion
+                        ? null
+                        : () {
+                          setState(() {
+                            _selectedAnswer = null;
+                            _hasAnswered = false;
+                            _hasStarted = false;
+                            _hasProcessedCompletion = false;
+                            _isProcessingCompletion = false;
+                            _awardedXpDelta = null;
+                            _xpAwardFailed = false;
+                          });
+                          quizProvider.reset();
+                        },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00897B),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'Finish',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  String _buildAwardedXpLabel() {
+    if (_isProcessingCompletion) {
+      return 'Updating XP...';
+    }
+
+    if (_xpAwardFailed) {
+      return 'XP update failed. Please try again.';
+    }
+
+    if (_awardedXpDelta == null) {
+      return 'Updating XP...';
+    }
+
+    if (_awardedXpDelta! > 0) {
+      return '+$_awardedXpDelta XP';
+    }
+
+    return 'No new XP — best score already higher/equal';
+  }
+
+  Widget _buildStartPage(QuizProvider quizProvider) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF00897B).withValues(alpha: 0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Image.asset(
+                'assets/bmorisbirdquiz.png',
+                height: 200,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(height: 40),
+            Text(
+              'Ready for a Challenge?',
+              style: GoogleFonts.poppins(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF00695C),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Test your Malay language skills with our adaptive quiz. The questions will get harder as you improve!',
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                color: Colors.black54,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 48),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _hasStarted = true;
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00897B),
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 60),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                'Start Quiz',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '${quizProvider.quizzes.length} Questions • Adaptive Difficulty',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

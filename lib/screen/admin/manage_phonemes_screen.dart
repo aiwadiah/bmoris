@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../../services/firestore_service.dart';
+import '../../widgets/admin_ui.dart';
+import '../../widgets/bmoris_back_button.dart';
 
 class ManagePhonemesScreen extends StatefulWidget {
   const ManagePhonemesScreen({super.key});
@@ -10,29 +13,49 @@ class ManagePhonemesScreen extends StatefulWidget {
 
 class _ManagePhonemesScreenState extends State<ManagePhonemesScreen> {
   final FirestoreService _firestoreService = FirestoreService();
+  final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _phonemes = [];
   bool _isLoading = true;
+  String _filter = 'all';
 
   @override
   void initState() {
     super.initState();
     _loadPhonemes();
+    _searchController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPhonemes() async {
     setState(() => _isLoading = true);
     try {
-      final snapshot =
-          await _firestoreService.firestore.collection('phonemes').get();
-      _phonemes = snapshot.docs
-          .map((doc) => {'id': doc.id, ...doc.data()})
-          .toList();
+      final snapshot = await _firestoreService.firestore.collection('phonemes').get();
+      _phonemes = snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading phonemes: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading phonemes: $e')));
+      }
     }
-    setState(() => _isLoading = false);
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  List<Map<String, dynamic>> get _visiblePhonemes {
+    final query = _searchController.text.trim().toLowerCase();
+    return _phonemes.where((phoneme) {
+      final symbol = (phoneme['symbol'] ?? '').toString();
+      final description = (phoneme['description'] ?? '').toString();
+      final example = (phoneme['exampleWord'] ?? '').toString();
+      if (_filter == 'popular' && example.isEmpty) return false;
+      if (query.isEmpty) return true;
+      return symbol.toLowerCase().contains(query) ||
+          description.toLowerCase().contains(query) ||
+          example.toLowerCase().contains(query);
+    }).toList();
   }
 
   Future<void> _addPhoneme() async {
@@ -40,7 +63,6 @@ class _ManagePhonemesScreenState extends State<ManagePhonemesScreen> {
       context: context,
       builder: (context) => const _PhonemeDialog(),
     );
-
     if (result != null) {
       try {
         await _firestoreService.firestore.collection('phonemes').add({
@@ -49,17 +71,10 @@ class _ManagePhonemesScreenState extends State<ManagePhonemesScreen> {
           'exampleWord': result['exampleWord'],
           'createdAt': DateTime.now().toIso8601String(),
         });
-        _loadPhonemes();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Phoneme added successfully')),
-          );
-        }
+        await _loadPhonemes();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error adding phoneme: $e')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error adding phoneme: $e')));
         }
       }
     }
@@ -74,29 +89,18 @@ class _ManagePhonemesScreenState extends State<ManagePhonemesScreen> {
         exampleWord: phoneme['exampleWord'],
       ),
     );
-
     if (result != null) {
       try {
-        await _firestoreService.firestore
-            .collection('phonemes')
-            .doc(phoneme['id'])
-            .update({
+        await _firestoreService.firestore.collection('phonemes').doc(phoneme['id']).update({
           'symbol': result['symbol'],
           'description': result['description'],
           'exampleWord': result['exampleWord'],
           'updatedAt': DateTime.now().toIso8601String(),
         });
-        _loadPhonemes();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Phoneme updated successfully')),
-          );
-        }
+        await _loadPhonemes();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error updating phoneme: $e')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error updating phoneme: $e')));
         }
       }
     }
@@ -106,13 +110,10 @@ class _ManagePhonemesScreenState extends State<ManagePhonemesScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Phoneme'),
-        content: const Text('Are you sure you want to delete this phoneme?'),
+        title: Text('Delete Phoneme', style: AdminUi.title()),
+        content: Text('Delete this phoneme from the library?', style: AdminUi.body()),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
@@ -120,21 +121,13 @@ class _ManagePhonemesScreenState extends State<ManagePhonemesScreen> {
         ],
       ),
     );
-
     if (confirm == true) {
       try {
         await _firestoreService.firestore.collection('phonemes').doc(id).delete();
-        _loadPhonemes();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Phoneme deleted successfully')),
-          );
-        }
+        await _loadPhonemes();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error deleting phoneme: $e')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting phoneme: $e')));
         }
       }
     }
@@ -142,126 +135,110 @@ class _ManagePhonemesScreenState extends State<ManagePhonemesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Manage Phoneme Library'),
-        backgroundColor: const Color(0xFF00796B),
-        foregroundColor: Colors.white,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _phonemes.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.record_voice_over,
-                          size: 80, color: Colors.grey.shade400),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'No phonemes yet',
-                        style: TextStyle(fontSize: 18, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Add your first phoneme',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _phonemes.length,
-                  itemBuilder: (context, index) {
-                    final phoneme = _phonemes[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: const Color(0xFF00796B),
-                          child: Text(
-                            phoneme['symbol'] ?? '',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        title: Text(
-                          phoneme['symbol'] ?? '',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(phoneme['description'] ?? ''),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Example: ${phoneme['exampleWord'] ?? ''}',
-                              style: const TextStyle(
-                                fontStyle: FontStyle.italic,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                        isThreeLine: true,
-                        trailing: PopupMenuButton(
-                          itemBuilder: (context) => [
-                            const PopupMenuItem(
-                              value: 'edit',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.edit, size: 20),
-                                  SizedBox(width: 8),
-                                  Text('Edit'),
-                                ],
-                              ),
-                            ),
-                            const PopupMenuItem(
-                              value: 'delete',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.delete, size: 20, color: Colors.red),
-                                  SizedBox(width: 8),
-                                  Text('Delete',
-                                      style: TextStyle(color: Colors.red)),
-                                ],
-                              ),
-                            ),
-                          ],
-                          onSelected: (value) {
-                            if (value == 'edit') {
-                              _editPhoneme(phoneme);
-                            } else if (value == 'delete') {
-                              _deletePhoneme(phoneme['id']);
-                            }
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                ),
+    final phonemes = _visiblePhonemes;
+    return AdminPage(
       floatingActionButton: FloatingActionButton(
         onPressed: _addPhoneme,
-        backgroundColor: const Color(0xFF00796B),
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: AdminUi.teal,
+        child: const Icon(Icons.add_rounded, color: Colors.white),
       ),
+      child:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : AdminShell(
+                title: 'Phoneme Library',
+                subtitle: 'Keep symbols, notes, and examples clean for the tutor.',
+                leading: const BMorisBackButton(),
+                trailing: AdminActionButton.primary(label: 'Add', icon: Icons.add_rounded, onPressed: _addPhoneme),
+                child: Column(
+                  children: [
+                    AdminSearchField(controller: _searchController, hintText: 'Search phonemes'),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        AdminPill(label: 'All', selected: _filter == 'all', onTap: () => setState(() => _filter = 'all')),
+                        const SizedBox(width: 8),
+                        AdminPill(label: 'Popular', selected: _filter == 'popular', onTap: () => setState(() => _filter = 'popular')),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    if (phonemes.isEmpty)
+                      const AdminEmptyState(
+                        icon: Icons.record_voice_over_outlined,
+                        title: 'No phonemes found',
+                        subtitle: 'Add a phoneme or clear the current search term.',
+                      )
+                    else
+                      ...phonemes.map((phoneme) => AdminCard(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 46,
+                              height: 46,
+                              decoration: BoxDecoration(
+                                color: AdminUi.mint,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  (phoneme['symbol'] ?? '').toString(),
+                                  style: AdminUi.title(AdminUi.teal),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          (phoneme['description'] ?? '').toString(),
+                                          style: AdminUi.body(),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      PopupMenuButton<String>(
+                                        onSelected: (value) {
+                                          if (value == 'edit') _editPhoneme(phoneme);
+                                          if (value == 'delete') _deletePhoneme(phoneme['id']);
+                                        },
+                                        itemBuilder: (context) => const [
+                                          PopupMenuItem(value: 'edit', child: Text('Edit')),
+                                          PopupMenuItem(value: 'delete', child: Text('Delete')),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Example: ${(phoneme['exampleWord'] ?? '').toString()}',
+                                    style: AdminUi.caption(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+                  ],
+                ),
+              ),
     );
   }
 }
 
 class _PhonemeDialog extends StatefulWidget {
+  const _PhonemeDialog({this.symbol, this.description, this.exampleWord});
+
   final String? symbol;
   final String? description;
   final String? exampleWord;
-
-  const _PhonemeDialog({
-    this.symbol,
-    this.description,
-    this.exampleWord,
-  });
 
   @override
   State<_PhonemeDialog> createState() => _PhonemeDialogState();
@@ -292,67 +269,34 @@ class _PhonemeDialogState extends State<_PhonemeDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.symbol == null ? 'Add Phoneme' : 'Edit Phoneme'),
+      title: Text(widget.symbol == null ? 'Add Phoneme' : 'Edit Phoneme', style: AdminUi.title()),
       content: Form(
         key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _symbolController,
-                decoration: const InputDecoration(
-                  labelText: 'Phoneme Symbol',
-                  border: OutlineInputBorder(),
-                  hintText: 'e.g., /a/',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter phoneme symbol';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
-                  hintText: 'Describe the phoneme',
-                ),
-                maxLines: 3,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter description';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _exampleWordController,
-                decoration: const InputDecoration(
-                  labelText: 'Example Word',
-                  border: OutlineInputBorder(),
-                  hintText: 'e.g., apa',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter example word';
-                  }
-                  return null;
-                },
-              ),
-            ],
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _symbolController,
+              decoration: adminInputDecoration(label: 'Phoneme symbol', hint: 'e.g. /a/'),
+              validator: (value) => value == null || value.isEmpty ? 'Please enter phoneme symbol' : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _descriptionController,
+              decoration: adminInputDecoration(label: 'Description'),
+              validator: (value) => value == null || value.isEmpty ? 'Please enter description' : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _exampleWordController,
+              decoration: adminInputDecoration(label: 'Example word'),
+              validator: (value) => value == null || value.isEmpty ? 'Please enter example word' : null,
+            ),
+          ],
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
         ElevatedButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
@@ -363,13 +307,8 @@ class _PhonemeDialogState extends State<_PhonemeDialog> {
               });
             }
           },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF00796B),
-          ),
-          child: Text(
-            widget.symbol == null ? 'Add' : 'Update',
-            style: const TextStyle(color: Colors.white),
-          ),
+          style: ElevatedButton.styleFrom(backgroundColor: AdminUi.teal),
+          child: Text(widget.symbol == null ? 'Add' : 'Save', style: const TextStyle(color: Colors.white)),
         ),
       ],
     );
