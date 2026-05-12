@@ -16,6 +16,10 @@ class _QuizScreenState extends State<QuizScreen> {
   int? _selectedAnswer;
   bool _hasAnswered = false;
   bool _hasStarted = false;
+  bool _hasProcessedCompletion = false;
+  bool _isProcessingCompletion = false;
+  int? _awardedXpDelta;
+  bool _xpAwardFailed = false;
 
   @override
   void initState() {
@@ -50,7 +54,9 @@ class _QuizScreenState extends State<QuizScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const QuizHistoryScreen()),
+                MaterialPageRoute(
+                  builder: (context) => const QuizHistoryScreen(),
+                ),
               );
             },
           ),
@@ -85,11 +91,7 @@ class _QuizScreenState extends State<QuizScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image.asset(
-            'assets/dodo.png',
-            width: 100,
-            height: 100,
-          ),
+          Image.asset('assets/dodo.png', width: 100, height: 100),
           const SizedBox(height: 16),
           const Text(
             'No quizzes available',
@@ -112,7 +114,8 @@ class _QuizScreenState extends State<QuizScreen> {
       children: [
         // Progress Bar
         LinearProgressIndicator(
-          value: (quizProvider.currentQuizIndex + 1) / quizProvider.totalQuestions,
+          value:
+              (quizProvider.currentQuizIndex + 1) / quizProvider.totalQuestions,
           backgroundColor: Colors.grey.shade200,
           valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00796B)),
         ),
@@ -134,9 +137,14 @@ class _QuizScreenState extends State<QuizScreen> {
                 // Difficulty Badge
                 Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: _getDifficultyColor(quiz.difficulty).withValues(alpha: 0.1),
+                      color: _getDifficultyColor(
+                        quiz.difficulty,
+                      ).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -205,11 +213,19 @@ class _QuizScreenState extends State<QuizScreen> {
                 setState(() {
                   _selectedAnswer = null;
                   _hasAnswered = false;
+                  if (quizProvider.isCompleted) {
+                    _hasProcessedCompletion = false;
+                    _isProcessingCompletion = false;
+                    _awardedXpDelta = null;
+                  }
                 });
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF00897B),
-                minimumSize: const Size(double.infinity, 56), // Increased height
+                minimumSize: const Size(
+                  double.infinity,
+                  56,
+                ), // Increased height
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12), // Reduced curve
                 ),
@@ -254,14 +270,15 @@ class _QuizScreenState extends State<QuizScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: _hasAnswered
-            ? null
-            : () {
-                setState(() {
-                  _selectedAnswer = index;
-                });
-                _submitAnswer(quizProvider, index);
-              },
+        onTap:
+            _hasAnswered
+                ? null
+                : () {
+                  setState(() {
+                    _selectedAnswer = index;
+                  });
+                  _submitAnswer(quizProvider, index);
+                },
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.all(16),
@@ -318,9 +335,61 @@ class _QuizScreenState extends State<QuizScreen> {
     });
   }
 
+  Future<void> _processQuizCompletionAward(
+    QuizProvider quizProvider,
+    int completedDifficulty,
+  ) async {
+    if (_hasProcessedCompletion || _isProcessingCompletion) return;
+
+    setState(() {
+      _isProcessingCompletion = true;
+      _xpAwardFailed = false;
+    });
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final xpDelta = await authProvider.awardQuizCompletionXp(
+        difficulty: completedDifficulty,
+        score: quizProvider.score,
+        correctAnswers: quizProvider.correctAnswers,
+        totalQuestions: quizProvider.totalQuestions,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _awardedXpDelta = xpDelta;
+        _xpAwardFailed = false;
+        _hasProcessedCompletion = true;
+        _isProcessingCompletion = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _awardedXpDelta = null;
+        _xpAwardFailed = true;
+        _hasProcessedCompletion = true;
+        _isProcessingCompletion = false;
+      });
+    }
+  }
+
   Widget _buildResultScreen(QuizProvider quizProvider) {
     final percentage = quizProvider.accuracyPercentage;
     final isPassed = percentage >= 70;
+    final completedDifficulty =
+        quizProvider.quizzes.isNotEmpty
+            ? quizProvider.quizzes.first.difficulty
+            : quizProvider.currentDifficulty;
+    final recommendedDifficulty = quizProvider.getRecommendedDifficulty();
+    final hasNextLevel = recommendedDifficulty > completedDifficulty;
+
+    if (!_hasProcessedCompletion && !_isProcessingCompletion) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _processQuizCompletionAward(quizProvider, completedDifficulty);
+        }
+      });
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -335,10 +404,7 @@ class _QuizScreenState extends State<QuizScreen> {
           const SizedBox(height: 16),
           Text(
             isPassed ? 'Great Job!' : 'Keep Practicing!',
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
@@ -353,7 +419,9 @@ class _QuizScreenState extends State<QuizScreen> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: (isPassed ? Colors.green : Colors.orange).withValues(alpha: 0.1),
+              color: (isPassed ? Colors.green : Colors.orange).withValues(
+                alpha: 0.1,
+              ),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -377,12 +445,15 @@ class _QuizScreenState extends State<QuizScreen> {
                   children: [
                     const Icon(Icons.star, color: Colors.amber),
                     const SizedBox(width: 4),
-                    Text(
-                      '+${quizProvider.score} XP',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.amber,
+                    Flexible(
+                      child: Text(
+                        _buildAwardedXpLabel(),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber,
+                        ),
                       ),
                     ),
                   ],
@@ -415,50 +486,64 @@ class _QuizScreenState extends State<QuizScreen> {
           const SizedBox(height: 32),
 
           // Action Buttons
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    setState(() {
-                      _hasStarted = false;
-                    });
-                    quizProvider.reset();
-                    quizProvider.loadAdaptiveQuizzes(quizProvider.currentDifficulty);
-                  },
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    side: const BorderSide(color: Color(0xFF00897B)),
-                    foregroundColor: const Color(0xFF00897B),
+              OutlinedButton(
+                onPressed:
+                    _isProcessingCompletion
+                        ? null
+                        : () {
+                          setState(() {
+                            _selectedAnswer = null;
+                            _hasAnswered = false;
+                            _hasStarted = false;
+                            _hasProcessedCompletion = false;
+                            _isProcessingCompletion = false;
+                            _awardedXpDelta = null;
+                            _xpAwardFailed = false;
+                          });
+                          quizProvider.reset();
+                          quizProvider.loadAdaptiveQuizzes(completedDifficulty);
+                        },
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Text(
-                    'Try Again',
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-                  ),
+                  side: const BorderSide(color: Color(0xFF00897B)),
+                  foregroundColor: const Color(0xFF00897B),
+                ),
+                child: Text(
+                  'Try Again',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final authProvider =
-                        Provider.of<AuthProvider>(context, listen: false);
-                    final score = quizProvider.score;
-                    
-                    // Award XP and reset state
-                    authProvider.addXp(score);
-                    authProvider.incrementActivityCount();
-                    
-                    if (mounted) {
-                      setState(() {
-                        _hasStarted = false;
-                      });
-                      quizProvider.reset();
-                    }
-                  },
+              if (hasNextLevel) ...[
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed:
+                      _hasProcessedCompletion
+                          ? () {
+                            setState(() {
+                              _selectedAnswer = null;
+                              _hasAnswered = false;
+                              _hasStarted = true;
+                              _hasProcessedCompletion = false;
+                              _isProcessingCompletion = false;
+                              _awardedXpDelta = null;
+                              _xpAwardFailed = false;
+                            });
+                            quizProvider.loadAdaptiveQuizzes(
+                              recommendedDifficulty,
+                            );
+                          }
+                          : null,
+                  icon: const Icon(Icons.arrow_upward_rounded),
+                  label: Text(
+                    'Next Level',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00897B),
                     foregroundColor: Colors.white,
@@ -468,10 +553,37 @@ class _QuizScreenState extends State<QuizScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: Text(
-                    'Finish',
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+                ),
+              ],
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed:
+                    _isProcessingCompletion
+                        ? null
+                        : () {
+                          setState(() {
+                            _selectedAnswer = null;
+                            _hasAnswered = false;
+                            _hasStarted = false;
+                            _hasProcessedCompletion = false;
+                            _isProcessingCompletion = false;
+                            _awardedXpDelta = null;
+                            _xpAwardFailed = false;
+                          });
+                          quizProvider.reset();
+                        },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00897B),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'Finish',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -479,6 +591,26 @@ class _QuizScreenState extends State<QuizScreen> {
         ],
       ),
     );
+  }
+
+  String _buildAwardedXpLabel() {
+    if (_isProcessingCompletion) {
+      return 'Updating XP...';
+    }
+
+    if (_xpAwardFailed) {
+      return 'XP update failed. Please try again.';
+    }
+
+    if (_awardedXpDelta == null) {
+      return 'Updating XP...';
+    }
+
+    if (_awardedXpDelta! > 0) {
+      return '+$_awardedXpDelta XP';
+    }
+
+    return 'No new XP — best score already higher/equal';
   }
 
   Widget _buildStartPage(QuizProvider quizProvider) {

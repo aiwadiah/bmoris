@@ -96,19 +96,13 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> signIn({required String email, required String password}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      _user = await _authService.signIn(
-        email: email,
-        password: password,
-      );
+      _user = await _authService.signIn(email: email, password: password);
       _isLoading = false;
       notifyListeners();
       return true;
@@ -146,11 +140,7 @@ class AuthProvider extends ChangeNotifier {
 
     final today = DateTime.now().toIso8601String().split('T')[0];
     if (_user!.lastActivityDate != today) {
-      await _authService.updateDailyGoal(
-        _user!.uid,
-        count: 0,
-        date: today,
-      );
+      await _authService.updateDailyGoal(_user!.uid, count: 0, date: today);
       _user = _user!.copyWith(dailyActivitiesCount: 0, lastActivityDate: today);
     }
   }
@@ -162,7 +152,11 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updateProfile({String? name, String? phoneNumber, String? photoUrl}) async {
+  Future<void> updateProfile({
+    String? name,
+    String? phoneNumber,
+    String? photoUrl,
+  }) async {
     if (_user != null) {
       await _authService.updateUserProfile(
         uid: _user!.uid,
@@ -209,13 +203,42 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<int> awardQuizCompletionXp({
+    required int difficulty,
+    required int score,
+    required int correctAnswers,
+    required int totalQuestions,
+  }) async {
+    if (_user == null) return 0;
+
+    final oldXp = _user!.xp;
+    final xpDelta = await _authService.awardQuizLevelBestScoreXp(
+      uid: _user!.uid,
+      difficulty: difficulty,
+      score: score,
+      correctAnswers: correctAnswers,
+      totalQuestions: totalQuestions,
+    );
+
+    await _authService.incrementActivityCount(_user!.uid);
+    await refreshUser();
+
+    if (xpDelta > 0 && _user != null) {
+      await _checkAndAwardBadges(oldXp, _user!.xp);
+    }
+
+    return xpDelta;
+  }
+
   Future<void> _checkAndAwardBadges(int oldXp, int newXp) async {
     if (_user == null) return;
 
     final badges = <String>[];
 
     // XP Milestones
-    if (oldXp < 100 && newXp >= 100 && !_user!.badges.contains('First 100 XP')) {
+    if (oldXp < 100 &&
+        newXp >= 100 &&
+        !_user!.badges.contains('First 100 XP')) {
       badges.add('First 100 XP');
     }
     if (oldXp < 500 && newXp >= 500 && !_user!.badges.contains('XP Master')) {
@@ -224,7 +247,9 @@ class AuthProvider extends ChangeNotifier {
     if (oldXp < 1000 && newXp >= 1000 && !_user!.badges.contains('XP Legend')) {
       badges.add('XP Legend');
     }
-    if (oldXp < 2000 && newXp >= 2000 && !_user!.badges.contains('XP Champion')) {
+    if (oldXp < 2000 &&
+        newXp >= 2000 &&
+        !_user!.badges.contains('XP Champion')) {
       badges.add('XP Champion');
     }
 
