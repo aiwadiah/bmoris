@@ -48,17 +48,41 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         onDestinationSelected: (index) => setState(() => _selectedIndex = index),
         height: 68,
         backgroundColor: Colors.white,
-        indicatorColor: AdminUi.mint,
+        indicatorColor: Colors.transparent,
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => AdminUi.caption(
             states.contains(WidgetState.selected) ? AdminUi.teal : AdminUi.muted,
           ),
         ),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_rounded), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.people_alt_rounded), label: 'Users'),
-          NavigationDestination(icon: Icon(Icons.library_books_rounded), label: 'Content'),
-          NavigationDestination(icon: Icon(Icons.campaign_rounded), label: 'Alerts'),
+        destinations: [
+          NavigationDestination(
+            icon: Icon(
+              Icons.home_rounded,
+              color: _selectedIndex == 0 ? AdminUi.teal : AdminUi.muted,
+            ),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(
+              Icons.people_alt_rounded,
+              color: _selectedIndex == 1 ? AdminUi.teal : AdminUi.muted,
+            ),
+            label: 'Users',
+          ),
+          NavigationDestination(
+            icon: Icon(
+              Icons.library_books_rounded,
+              color: _selectedIndex == 2 ? AdminUi.teal : AdminUi.muted,
+            ),
+            label: 'Content',
+          ),
+          NavigationDestination(
+            icon: Icon(
+              Icons.campaign_rounded,
+              color: _selectedIndex == 3 ? AdminUi.teal : AdminUi.muted,
+            ),
+            label: 'Alerts',
+          ),
         ],
       ),
       child:
@@ -85,130 +109,175 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final quizCount = '${_analytics['totalQuizAttempts'] ?? 0}';
     final averageXp = '${_analytics['averageXp'] ?? 0}';
 
-    return AdminShell(
-      title: 'Admin Dashboard',
-      subtitle: 'A quick view of activity, users, and content health.',
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            onPressed: _loadData,
-            icon: const Icon(Icons.refresh_rounded, color: AdminUi.teal),
-          ),
-          IconButton(
-            onPressed: () => Navigator.pushNamed(context, '/admin/profile'),
-            icon: const Icon(Icons.person_outline_rounded, color: AdminUi.teal),
-          ),
-        ],
-      ),
+    return SingleChildScrollView(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GridView.count(
-            crossAxisCount: 4,
-            shrinkWrap: true,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: .9,
-            children: [
-              AdminStatCard(label: 'Users', value: userCount, icon: Icons.people_alt_rounded),
-              AdminStatCard(label: 'Practice', value: pronunciationCount, icon: Icons.mic_none_rounded),
-              AdminStatCard(label: 'Quizzes', value: quizCount, icon: Icons.quiz_outlined),
-              AdminStatCard(label: 'Avg XP', value: averageXp, icon: Icons.bolt_rounded),
-            ],
-          ),
-          const SizedBox(height: 18),
-          AdminCard(
+          // Green Header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(24, 40, 24, 130), // Reduced from 150 to tighten gap
+            decoration: const BoxDecoration(
+              color: AdminUi.teal,
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AdminSectionTitle(
-                  'Admin Tools',
-                  trailing: Text('$pendingCount pending', style: AdminUi.caption()),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Admin Dashboard',
+                        style: AdminUi.headline(Colors.white),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: _loadData,
+                          icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pushNamed(context, '/admin/profile'),
+                          icon: const Icon(Icons.person_outline_rounded, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 14),
-                _overviewAction(
-                  icon: Icons.campaign_rounded,
-                  title: 'Manage announcements',
-                  subtitle: 'Create updates and make them visible to learners.',
-                  onTap: () => Navigator.pushNamed(context, '/admin/announcements'),
-                ),
-                _overviewAction(
-                  icon: Icons.book_rounded,
-                  title: 'Manage lessons',
-                  subtitle: 'Edit lesson cards, content, and publish status.',
-                  onTap: () => Navigator.pushNamed(context, '/admin/lessons'),
-                ),
-                _overviewAction(
-                  icon: Icons.quiz_rounded,
-                  title: 'Manage quizzes',
-                  subtitle: 'Update quiz sets or create new practice content.',
-                  onTap: () => Navigator.pushNamed(context, '/admin/quizzes'),
-                ),
-                _overviewAction(
-                  icon: Icons.psychology_alt_rounded,
-                  title: 'AI prompt library',
-                  subtitle: 'Tune prompt behavior for tutor and content tools.',
-                  onTap: () => Navigator.pushNamed(context, '/admin/ai-prompts'),
+                const SizedBox(height: 4),
+                Text(
+                  'A quick view of activity, users, and content health.',
+                  style: AdminUi.body(Colors.white.withValues(alpha: 0.8)),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 18),
-          AdminCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const AdminSectionTitle('Recent Activity'),
-                const SizedBox(height: 12),
-                if (_feedbacks.isEmpty)
-                  Text('No recent feedback yet.', style: AdminUi.body(AdminUi.muted))
-                else
-                  ..._feedbacks.take(4).map(
-                    (feedback) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              color: _statusColor(feedback.status).withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              _statusIcon(feedback.status),
-                              size: 18,
-                              color: _statusColor(feedback.status),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  feedback.subject.isEmpty ? 'General feedback' : feedback.subject,
-                                  style: AdminUi.body(),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  feedback.userName,
-                                  style: AdminUi.caption(),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(feedback.status, style: AdminUi.caption(_statusColor(feedback.status))),
-                        ],
-                      ),
+
+          // Overlapping Content
+          Transform.translate(
+            offset: const Offset(0, -110), // Adjusted offset to keep stat cards fully on green
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GridView.count(
+                    crossAxisCount: 4,
+                    shrinkWrap: true,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    physics: const NeverScrollableScrollPhysics(),
+                    childAspectRatio: .9,
+                    children: [
+                      AdminStatCard(label: 'Users', value: userCount, icon: Icons.people_alt_rounded),
+                      AdminStatCard(label: 'Practice', value: pronunciationCount, icon: Icons.mic_none_rounded),
+                      AdminStatCard(label: 'Quizzes', value: quizCount, icon: Icons.quiz_outlined),
+                      AdminStatCard(label: 'Avg XP', value: averageXp, icon: Icons.bolt_rounded),
+                    ],
+                  ),
+                  const SizedBox(height: 32), // Increased gap before Admin Tools
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: AdminSectionTitle(
+                      'Admin Tools',
+                      trailing: Text('$pendingCount pending', style: AdminUi.caption()),
                     ),
                   ),
-              ],
+                  const SizedBox(height: 12),
+                  AdminCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _overviewAction(
+                          icon: Icons.campaign_rounded,
+                          title: 'Manage announcements',
+                          subtitle: 'Create updates and make them visible to learners.',
+                          onTap: () => Navigator.pushNamed(context, '/admin/announcements'),
+                        ),
+                        _overviewAction(
+                          icon: Icons.book_rounded,
+                          title: 'Manage lessons',
+                          subtitle: 'Edit lesson cards, content, and publish status.',
+                          onTap: () => Navigator.pushNamed(context, '/admin/lessons'),
+                        ),
+                        _overviewAction(
+                          icon: Icons.quiz_rounded,
+                          title: 'Manage quizzes',
+                          subtitle: 'Update quiz sets or create new practice content.',
+                          onTap: () => Navigator.pushNamed(context, '/admin/quizzes'),
+                        ),
+                        _overviewAction(
+                          icon: Icons.psychology_alt_rounded,
+                          title: 'AI prompt library',
+                          subtitle: 'Tune prompt behavior for tutor and content tools.',
+                          onTap: () => Navigator.pushNamed(context, '/admin/ai-prompts'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4),
+                    child: AdminSectionTitle('Recent Activity'),
+                  ),
+                  const SizedBox(height: 12),
+                  AdminCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_feedbacks.isEmpty)
+                          Text('No recent feedback yet.', style: AdminUi.body(AdminUi.muted))
+                        else
+                          ..._feedbacks.take(4).map(
+                                (feedback) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 34,
+                                        height: 34,
+                                        decoration: BoxDecoration(
+                                          color: _statusColor(feedback.status).withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Icon(
+                                          _statusIcon(feedback.status),
+                                          size: 18,
+                                          color: _statusColor(feedback.status),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              feedback.subject.isEmpty ? 'General feedback' : feedback.subject,
+                                              style: AdminUi.body(),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            Text(
+                                              feedback.userName,
+                                              style: AdminUi.caption(),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Text(feedback.status, style: AdminUi.caption(_statusColor(feedback.status))),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

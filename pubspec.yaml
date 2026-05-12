@@ -67,7 +67,7 @@ dependencies:
   intl: ^0.20.1
   uuid: ^4.5.1
   image_picker: ^1.0.7
-  flutter_local_notifications: ^21.0.0
+  flutter_local_notifications: ^19.5.0
 
 dev_dependencies:
   flutter_test:
@@ -103,6 +103,7 @@ flutter:
     - assets/bmorisbird2.png
     - assets/bmorisbird3.png
     - assets/bmorisbird4.png
+    - assets/bmorisbird5.png
     - assets/bmorisbirdgreat.png
     - assets/bmorisbirdquiz.png
     - assets/sebutan.png
