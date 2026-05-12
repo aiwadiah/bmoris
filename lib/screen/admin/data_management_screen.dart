@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../../services/data_seeder.dart';
+import '../../widgets/admin_ui.dart';
 import '../../widgets/bmoris_back_button.dart';
 
 class DataManagementScreen extends StatefulWidget {
@@ -19,388 +21,220 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       await _dataSeeder.seedAllData();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Data seeded successfully!'),
-            backgroundColor: Colors.green,
-          ),
+          const SnackBar(content: Text('Data seeded successfully!'), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ Error seeding data: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error seeding data: $e'), backgroundColor: Colors.red),
         );
       }
     }
-    setState(() => _isLoading = false);
+    if (mounted) setState(() => _isLoading = false);
   }
 
   Future<void> _clearData() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Clear All Data'),
-            content: const Text(
-              'Are you sure you want to delete all lessons and quizzes? This action cannot be undone.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
+    final confirm = await _confirmAction(
+      title: 'Clear All Data',
+      message: 'Delete all lessons and quizzes? This cannot be undone.',
+      confirmLabel: 'Delete',
+      confirmColor: AdminUi.danger,
     );
-
     if (confirm != true) return;
-
     setState(() => _isLoading = true);
     try {
       await _dataSeeder.clearAllData();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Data cleared successfully!'),
-            backgroundColor: Colors.green,
-          ),
+          const SnackBar(content: Text('Data cleared successfully!'), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ Error clearing data: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error clearing data: $e'), backgroundColor: Colors.red),
         );
       }
     }
-    setState(() => _isLoading = false);
+    if (mounted) setState(() => _isLoading = false);
   }
 
   Future<void> _reseedData() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Reseed Data'),
-            content: const Text(
-              'This will delete all existing lessons and quizzes and reload them from the JSON files. Continue?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: Colors.orange),
-                child: const Text('Reseed'),
-              ),
-            ],
-          ),
+    final confirm = await _confirmAction(
+      title: 'Reseed Data',
+      message: 'Replace all lessons and quizzes with the bundled JSON source files?',
+      confirmLabel: 'Reseed',
+      confirmColor: const Color(0xFFE59B2F),
     );
-
     if (confirm != true) return;
-
     setState(() => _isLoading = true);
     try {
       await _dataSeeder.reseedAllData();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Data reseeded successfully!'),
-            backgroundColor: Colors.green,
-          ),
+          const SnackBar(content: Text('Data reseeded successfully!'), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ Error reseeding data: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error reseeding data: $e'), backgroundColor: Colors.red),
         );
       }
     }
-    setState(() => _isLoading = false);
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  Future<bool?> _confirmAction({
+    required String title,
+    required String message,
+    required String confirmLabel,
+    required Color confirmColor,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title, style: AdminUi.title()),
+        content: Text(message, style: AdminUi.body()),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: confirmColor),
+            child: Text(confirmLabel),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
+    return AdminPage(
+      child: AdminShell(
+        title: 'Data Management',
+        subtitle: 'Import, reset, and maintain bundled BMoris content.',
         leading: const BMorisBackButton(),
-        title: const Text('Data Management'),
-        backgroundColor: const Color(0xFF00796B),
-        foregroundColor: Colors.white,
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                AdminCard(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AdminUi.mint,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(Icons.storage_rounded, color: AdminUi.teal),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Workspace Actions', style: AdminUi.title()),
+                            Text('Use these tools when content needs to be imported or reset.', style: AdminUi.caption()),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _actionCard(
+                  title: 'Import Lessons and Quizzes',
+                  subtitle: 'Load bundled JSON content into Firestore without replacing existing records.',
+                  icon: Icons.upload_file_rounded,
+                  accent: const Color(0xFF3DA96B),
+                  action: AdminActionButton.primary(label: 'Import Data', onPressed: _seedData, expanded: true),
+                ),
+                const SizedBox(height: 12),
+                _actionCard(
+                  title: 'Export Refresh',
+                  subtitle: 'Clear current learning content and reload the latest bundled source.',
+                  icon: Icons.sync_rounded,
+                  accent: const Color(0xFFE59B2F),
+                  action: AdminActionButton.outlined(label: 'Reseed Data', onPressed: _reseedData, expanded: true),
+                ),
+                const SizedBox(height: 12),
+                _actionCard(
+                  title: 'Danger Zone',
+                  subtitle: 'Permanently remove all lesson and quiz documents from Firestore.',
+                  icon: Icons.delete_forever_rounded,
+                  accent: AdminUi.danger,
+                  action: AdminActionButton.danger(label: 'Clear All Data', onPressed: _clearData, expanded: true),
+                ),
+                const SizedBox(height: 16),
+                AdminCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Source Files', style: AdminUi.title()),
+                      const SizedBox(height: 10),
+                      Text('assets/data/lessons.json', style: AdminUi.body()),
+                      const SizedBox(height: 4),
+                      Text('assets/data/quizzes.json', style: AdminUi.body()),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (_isLoading)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
+              ),
+          ],
+        ),
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+    );
+  }
+
+  Widget _actionCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color accent,
+    required Widget action,
+  }) {
+    return AdminCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: accent),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.storage,
-                      size: 80,
-                      color: Color(0xFF00796B),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Database Management',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Manage lessons and quizzes data',
-                      style: TextStyle(color: Colors.grey),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 32),
-
-                    // Seed Data Card
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Icon(
-                                    Icons.upload,
-                                    color: Colors.green,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                const Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Seed Data',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Upload lessons and quizzes from JSON files',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'This will add all lessons and quizzes to Firestore if they don\'t already exist.',
-                              style: TextStyle(fontSize: 14),
-                            ),
-                            const SizedBox(height: 12),
-                            ElevatedButton(
-                              onPressed: _seedData,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                minimumSize: const Size(double.infinity, 48),
-                              ),
-                              child: const Text(
-                                'Seed Data',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Clear Data Card
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Icon(
-                                    Icons.delete_forever,
-                                    color: Colors.red,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                const Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Clear Data',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Delete all lessons and quizzes',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              '⚠️ Warning: This will permanently delete all lessons and quizzes from Firestore.',
-                              style: TextStyle(fontSize: 14, color: Colors.red),
-                            ),
-                            const SizedBox(height: 12),
-                            OutlinedButton(
-                              onPressed: _clearData,
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.red,
-                                side: const BorderSide(color: Colors.red),
-                                minimumSize: const Size(double.infinity, 48),
-                              ),
-                              child: const Text('Clear All Data'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Reseed Data Card
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Icon(
-                                    Icons.refresh,
-                                    color: Colors.orange,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                const Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Reseed Data',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Clear and reload all data',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'This will delete existing data and reload it from JSON files. Useful for updates.',
-                              style: TextStyle(fontSize: 14),
-                            ),
-                            const SizedBox(height: 12),
-                            ElevatedButton(
-                              onPressed: _reseedData,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.orange,
-                                minimumSize: const Size(double.infinity, 48),
-                              ),
-                              child: const Text(
-                                'Reseed Data',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Info Card
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.blue.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.info_outline, color: Colors.blue.shade700),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Text(
-                              'Data is loaded from:\n• assets/data/lessons.json\n• assets/data/quizzes.json',
-                              style: TextStyle(fontSize: 12),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    Text(title, style: AdminUi.title()),
+                    Text(subtitle, style: AdminUi.caption()),
                   ],
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          action,
+        ],
+      ),
     );
   }
 }

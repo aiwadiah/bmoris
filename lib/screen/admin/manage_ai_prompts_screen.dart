@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../services/firestore_service.dart';
+import 'package:flutter/material.dart';
+
+import '../../widgets/admin_ui.dart';
 import '../../widgets/bmoris_back_button.dart';
+import '../../services/firestore_service.dart';
 
 class ManageAIPromptsScreen extends StatefulWidget {
   const ManageAIPromptsScreen({super.key});
@@ -12,6 +14,7 @@ class ManageAIPromptsScreen extends StatefulWidget {
 
 class _ManageAIPromptsScreenState extends State<ManageAIPromptsScreen> {
   final FirestoreService _firestoreService = FirestoreService();
+  final TextEditingController _searchController = TextEditingController();
   Map<String, AIPrompt> _prompts = {};
   bool _isLoading = true;
 
@@ -19,91 +22,74 @@ class _ManageAIPromptsScreenState extends State<ManageAIPromptsScreen> {
   void initState() {
     super.initState();
     _loadPrompts();
+    _searchController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPrompts() async {
     setState(() => _isLoading = true);
     try {
-      final doc =
-          await _firestoreService.firestore
-              .collection('settings')
-              .doc('ai_prompts')
-              .get();
-
+      final doc = await _firestoreService.firestore.collection('settings').doc('ai_prompts').get();
       if (doc.exists) {
         final data = doc.data() as Map<String, dynamic>;
         _prompts = {
           'pronunciation': AIPrompt(
             id: 'pronunciation',
-            name: 'Pronunciation Analysis',
-            description: 'Prompt for analyzing user pronunciation',
+            name: 'Tutor Feedback',
+            description: 'Prompt used to analyze spoken pronunciation.',
             prompt: data['pronunciation'] ?? _defaultPronunciationPrompt,
           ),
           'feedback': AIPrompt(
             id: 'feedback',
-            name: 'Feedback Generation',
-            description: 'Prompt for generating helpful feedback',
+            name: 'Feedback Replies',
+            description: 'Prompt used to produce structured learner feedback.',
             prompt: data['feedback'] ?? _defaultFeedbackPrompt,
           ),
           'quiz_generation': AIPrompt(
             id: 'quiz_generation',
-            name: 'Quiz Generation',
-            description: 'Prompt for generating quiz questions',
+            name: 'Quiz Builder',
+            description: 'Prompt used to generate new multiple-choice quizzes.',
             prompt: data['quiz_generation'] ?? _defaultQuizPrompt,
           ),
         };
       } else {
-        // Initialize with defaults
         _prompts = {
-          'pronunciation': AIPrompt(
-            id: 'pronunciation',
-            name: 'Pronunciation Analysis',
-            description: 'Prompt for analyzing user pronunciation',
-            prompt: _defaultPronunciationPrompt,
-          ),
-          'feedback': AIPrompt(
-            id: 'feedback',
-            name: 'Feedback Generation',
-            description: 'Prompt for generating helpful feedback',
-            prompt: _defaultFeedbackPrompt,
-          ),
-          'quiz_generation': AIPrompt(
-            id: 'quiz_generation',
-            name: 'Quiz Generation',
-            description: 'Prompt for generating quiz questions',
-            prompt: _defaultQuizPrompt,
-          ),
+          'pronunciation': AIPrompt(id: 'pronunciation', name: 'Tutor Feedback', description: 'Prompt used to analyze spoken pronunciation.', prompt: _defaultPronunciationPrompt),
+          'feedback': AIPrompt(id: 'feedback', name: 'Feedback Replies', description: 'Prompt used to produce structured learner feedback.', prompt: _defaultFeedbackPrompt),
+          'quiz_generation': AIPrompt(id: 'quiz_generation', name: 'Quiz Builder', description: 'Prompt used to generate new multiple-choice quizzes.', prompt: _defaultQuizPrompt),
         };
       }
-    } catch (e) {
-      // Handle error
-    }
-    setState(() => _isLoading = false);
+    } catch (_) {}
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  List<AIPrompt> get _visiblePrompts {
+    final query = _searchController.text.trim().toLowerCase();
+    final prompts = _prompts.values.toList();
+    if (query.isEmpty) return prompts;
+    return prompts.where((prompt) {
+      return prompt.name.toLowerCase().contains(query) ||
+          prompt.description.toLowerCase().contains(query) ||
+          prompt.prompt.toLowerCase().contains(query);
+    }).toList();
   }
 
   Future<void> _savePrompt(AIPrompt prompt) async {
     try {
-      await _firestoreService.firestore
-          .collection('settings')
-          .doc('ai_prompts')
-          .set({prompt.id: prompt.prompt}, SetOptions(merge: true));
-
+      await _firestoreService.firestore.collection('settings').doc('ai_prompts').set({
+        prompt.id: prompt.prompt,
+      }, SetOptions(merge: true));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Prompt saved successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Prompt saved successfully'), backgroundColor: Colors.green));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving prompt: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error saving prompt: $e'), backgroundColor: Colors.red));
       }
     }
   }
@@ -111,12 +97,8 @@ class _ManageAIPromptsScreenState extends State<ManageAIPromptsScreen> {
   Future<void> _editPrompt(AIPrompt prompt) async {
     final result = await Navigator.push<String>(
       context,
-      MaterialPageRoute(
-        builder: (context) => _PromptEditorScreen(prompt: prompt),
-        fullscreenDialog: true,
-      ),
+      MaterialPageRoute(builder: (context) => _PromptEditorScreen(prompt: prompt), fullscreenDialog: true),
     );
-
     if (result != null) {
       setState(() {
         _prompts[prompt.id] = AIPrompt(
@@ -133,24 +115,15 @@ class _ManageAIPromptsScreenState extends State<ManageAIPromptsScreen> {
   Future<void> _resetToDefault(AIPrompt prompt) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Reset to Default'),
-            content: Text('Reset "${prompt.name}" to default prompt?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: Colors.orange),
-                child: const Text('Reset'),
-              ),
-            ],
-          ),
+      builder: (context) => AlertDialog(
+        title: Text('Reset to Default', style: AdminUi.title()),
+        content: Text('Reset "${prompt.name}" to its default prompt?', style: AdminUi.body()),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Reset')),
+        ],
+      ),
     );
-
     if (confirm == true) {
       String defaultPrompt;
       switch (prompt.id) {
@@ -166,7 +139,6 @@ class _ManageAIPromptsScreenState extends State<ManageAIPromptsScreen> {
         default:
           return;
       }
-
       setState(() {
         _prompts[prompt.id] = AIPrompt(
           id: prompt.id,
@@ -176,147 +148,111 @@ class _ManageAIPromptsScreenState extends State<ManageAIPromptsScreen> {
         );
       });
       await _savePrompt(_prompts[prompt.id]!);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Prompt reset to default'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: const BMorisBackButton(),
-        title: const Text('Manage AI Prompts'),
-        backgroundColor: const Color(0xFF00796B),
-        foregroundColor: Colors.white,
-      ),
-      body:
+    final prompts = _visiblePrompts;
+    return AdminPage(
+      child:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : RefreshIndicator(
-                onRefresh: _loadPrompts,
-                child: ListView(
-                  padding: const EdgeInsets.all(16),
+              : AdminShell(
+                title: 'AI Prompt Library',
+                subtitle: 'Tune how the assistant analyzes, replies, and builds content.',
+                leading: const BMorisBackButton(),
+                child: Column(
                   children: [
-                    const Text(
-                      'AI Training Prompts',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                    AdminSearchField(controller: _searchController, hintText: 'Search prompts'),
+                    const SizedBox(height: 16),
+                    ...prompts.map((prompt) => AdminCard(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: AdminUi.mint,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(_getPromptIcon(prompt.id), color: AdminUi.teal),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(prompt.name, style: AdminUi.title()),
+                                    Text(prompt.description, style: AdminUi.caption()),
+                                  ],
+                                ),
+                              ),
+                              const AdminPill(label: 'Published', selected: true),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF7F8FA),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: AdminUi.border),
+                            ),
+                            child: Text(
+                              prompt.prompt.length > 180 ? '${prompt.prompt.substring(0, 180)}...' : prompt.prompt,
+                              style: AdminUi.caption(AdminUi.text),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: AdminActionButton.outlined(
+                                  label: 'Reset',
+                                  icon: Icons.restart_alt_rounded,
+                                  onPressed: () => _resetToDefault(prompt),
+                                  expanded: true,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: AdminActionButton.primary(
+                                  label: 'Edit Prompt',
+                                  icon: Icons.edit_outlined,
+                                  onPressed: () => _editPrompt(prompt),
+                                  expanded: true,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Configure the prompts used by the AI to analyze pronunciation, generate feedback, and create quiz questions.',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                    const SizedBox(height: 24),
-                    ..._prompts.values.map(
-                      (prompt) => _buildPromptCard(prompt),
-                    ),
+                    )),
                   ],
                 ),
               ),
     );
   }
 
-  Widget _buildPromptCard(AIPrompt prompt) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(_getPromptIcon(prompt.id), color: const Color(0xFF00796B)),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        prompt.name,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        prompt.description,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                prompt.prompt.length > 200
-                    ? '${prompt.prompt.substring(0, 200)}...'
-                    : prompt.prompt,
-                style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: () => _resetToDefault(prompt),
-                  icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text('Reset'),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton.icon(
-                  onPressed: () => _editPrompt(prompt),
-                  icon: const Icon(Icons.edit, size: 18),
-                  label: const Text('Edit Prompt'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00796B),
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   IconData _getPromptIcon(String id) {
     switch (id) {
       case 'pronunciation':
-        return Icons.record_voice_over;
+        return Icons.record_voice_over_rounded;
       case 'feedback':
-        return Icons.feedback;
+        return Icons.forum_outlined;
       case 'quiz_generation':
-        return Icons.quiz;
+        return Icons.quiz_rounded;
       default:
-        return Icons.settings;
+        return Icons.settings_outlined;
     }
   }
 
-  // Default prompts
   String get _defaultPronunciationPrompt => '''
 You are a Bahasa Melayu pronunciation expert. Analyze the user's pronunciation and provide detailed feedback.
 
@@ -372,25 +308,20 @@ class AIPrompt {
   final String description;
   final String prompt;
 
-  AIPrompt({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.prompt,
-  });
+  AIPrompt({required this.id, required this.name, required this.description, required this.prompt});
 }
 
 class _PromptEditorScreen extends StatefulWidget {
-  final AIPrompt prompt;
-
   const _PromptEditorScreen({required this.prompt});
+
+  final AIPrompt prompt;
 
   @override
   State<_PromptEditorScreen> createState() => _PromptEditorScreenState();
 }
 
 class _PromptEditorScreenState extends State<_PromptEditorScreen> {
-  late TextEditingController _controller;
+  late final TextEditingController _controller;
   bool _hasChanges = false;
 
   @override
@@ -398,11 +329,7 @@ class _PromptEditorScreenState extends State<_PromptEditorScreen> {
     super.initState();
     _controller = TextEditingController(text: widget.prompt.prompt);
     _controller.addListener(() {
-      if (!_hasChanges) {
-        setState(() {
-          _hasChanges = true;
-        });
-      }
+      if (!_hasChanges) setState(() => _hasChanges = true);
     });
   }
 
@@ -412,33 +339,23 @@ class _PromptEditorScreenState extends State<_PromptEditorScreen> {
     super.dispose();
   }
 
-  void _save() {
-    Navigator.pop(context, _controller.text);
-  }
-
   Future<bool> _onWillPop() async {
     if (!_hasChanges) return true;
-
     final result = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Unsaved Changes'),
-            content: const Text('You have unsaved changes. Discard them?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('Discard'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: Text('Unsaved Changes', style: AdminUi.title()),
+        content: Text('You have unsaved changes. Discard them?', style: AdminUi.body()),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Discard'),
           ),
+        ],
+      ),
     );
-
     return result ?? false;
   }
 
@@ -449,91 +366,65 @@ class _PromptEditorScreenState extends State<_PromptEditorScreen> {
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         final shouldPop = await _onWillPop();
-        if (shouldPop && context.mounted) {
-          Navigator.pop(context);
-        }
+        if (shouldPop && context.mounted) Navigator.pop(context);
       },
-      child: Scaffold(
-        appBar: AppBar(
+      child: AdminPage(
+        child: AdminShell(
+          title: 'Edit AI Prompt',
+          subtitle: widget.prompt.name,
           leading: const BMorisBackButton(),
-          title: Text('Edit ${widget.prompt.name}'),
-          backgroundColor: const Color(0xFF00796B),
-          foregroundColor: Colors.white,
-          actions: [
-            IconButton(icon: const Icon(Icons.check), onPressed: _save),
-          ],
-        ),
-        body: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              color: Colors.blue.shade50,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Available Variables:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildVariableChip(
-                    '{target_text}',
-                    'The text the user should pronounce',
-                  ),
-                  _buildVariableChip(
-                    '{spoken_text}',
-                    'The text transcribed from user speech',
-                  ),
-                  _buildVariableChip(
-                    '{performance_data}',
-                    'User performance metrics',
-                  ),
-                  _buildVariableChip('{topic}', 'Quiz topic'),
-                  _buildVariableChip('{difficulty}', 'Difficulty level (1-5)'),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: TextField(
-                  controller: _controller,
-                  maxLines: null,
-                  expands: true,
-                  decoration: const InputDecoration(
-                    hintText: 'Enter your AI prompt here...',
-                    border: OutlineInputBorder(),
-                  ),
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
+          trailing: AdminActionButton.primary(label: 'Save', icon: Icons.check_rounded, onPressed: () => Navigator.pop(context, _controller.text)),
+          child: Column(
+            children: [
+              AdminCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Available variables', style: AdminUi.title()),
+                    const SizedBox(height: 10),
+                    _variable('{target_text}', 'The text the user should pronounce'),
+                    _variable('{spoken_text}', 'The text transcribed from user speech'),
+                    _variable('{performance_data}', 'User performance metrics'),
+                    _variable('{topic}', 'Quiz topic'),
+                    _variable('{difficulty}', 'Difficulty level'),
+                  ],
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 14),
+              AdminCard(
+                child: SizedBox(
+                  height: 420,
+                  child: TextField(
+                    controller: _controller,
+                    expands: true,
+                    maxLines: null,
+                    decoration: adminInputDecoration(label: 'Prompt body'),
+                    style: AdminUi.body(),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildVariableChip(String variable, String description) {
+  Widget _variable(String variable, String description) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(4),
+              color: const Color(0xFFF2F3F5),
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
-              variable,
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-            ),
+            child: Text(variable, style: AdminUi.caption(AdminUi.text)),
           ),
           const SizedBox(width: 8),
-          Expanded(
-            child: Text(description, style: const TextStyle(fontSize: 12)),
-          ),
+          Expanded(child: Text(description, style: AdminUi.caption())),
         ],
       ),
     );

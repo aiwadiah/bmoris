@@ -75,6 +75,8 @@ class _PronunciationHistoryScreenState
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+
+        leadingWidth: BMorisBackButton.leadingWidth,
         leading: const BMorisBackButton(),
         title: Text(
           'Pronunciation History',

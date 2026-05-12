@@ -82,6 +82,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
+
+        leadingWidth: BMorisBackButton.leadingWidth,
         leading: const BMorisBackButton(),
         title: Text(
           'Edit Profile',

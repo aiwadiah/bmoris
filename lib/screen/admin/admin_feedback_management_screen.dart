@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../../models/feedback_model.dart';
 import '../../services/firestore_service.dart';
+import '../../widgets/admin_ui.dart';
 import '../../widgets/bmoris_back_button.dart';
 
 class AdminFeedbackManagementScreen extends StatefulWidget {
@@ -30,9 +32,9 @@ class _AdminFeedbackManagementScreenState
       setState(() => _feedbacks = feedbacks);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error loading feedback: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading feedback: $e')),
+        );
       }
     } finally {
       if (mounted) {
@@ -56,7 +58,7 @@ class _AdminFeedbackManagementScreenState
         return StatefulBuilder(
           builder: (context, setModalState) {
             return AlertDialog(
-              title: const Text('Respond to Feedback'),
+              title: Text('Respond to Feedback', style: AdminUi.title()),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -64,18 +66,12 @@ class _AdminFeedbackManagementScreenState
                     TextField(
                       controller: responseController,
                       maxLines: 4,
-                      decoration: const InputDecoration(
-                        labelText: 'Response',
-                        border: OutlineInputBorder(),
-                      ),
+                      decoration: adminInputDecoration(label: 'Response'),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     DropdownButtonFormField<String>(
                       initialValue: selectedStatus,
-                      decoration: const InputDecoration(
-                        labelText: 'Status',
-                        border: OutlineInputBorder(),
-                      ),
+                      decoration: adminInputDecoration(label: 'Status'),
                       items: const [
                         DropdownMenuItem(
                           value: 'reviewed',
@@ -108,7 +104,7 @@ class _AdminFeedbackManagementScreenState
                     });
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00796B),
+                    backgroundColor: AdminUi.teal,
                   ),
                   child: const Text(
                     'Save',
@@ -128,9 +124,7 @@ class _AdminFeedbackManagementScreenState
 
   Future<void> _respondToFeedback(FeedbackModel feedback) async {
     final result = await _showResponseDialog(feedback);
-    if (result == null) {
-      return;
-    }
+    if (result == null) return;
 
     try {
       await _firestoreService.respondToFeedback(
@@ -153,9 +147,10 @@ class _AdminFeedbackManagementScreenState
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Delete Feedback'),
-            content: const Text(
+            title: Text('Delete Feedback', style: AdminUi.title()),
+            content: Text(
               'Are you sure you want to delete this feedback?',
+              style: AdminUi.body(),
             ),
             actions: [
               TextButton(
@@ -173,159 +168,193 @@ class _AdminFeedbackManagementScreenState
           ),
     );
 
-    if (confirm != true) {
-      return;
-    }
+    if (confirm != true) return;
 
     try {
       await _firestoreService.deleteFeedback(id);
       await _loadFeedback();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error deleting feedback: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting feedback: $e')),
+        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: const BMorisBackButton(),
-        title: const Text('Feedback Management'),
-        backgroundColor: const Color(0xFF00796B),
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadFeedback),
-        ],
-      ),
-      body:
+    final pendingCount =
+        _feedbacks.where((feedback) => feedback.status == 'pending').length;
+
+    return AdminPage(
+      child:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : _feedbacks.isEmpty
-              ? const Center(child: Text('No feedback yet'))
-              : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _feedbacks.length,
-                itemBuilder: (context, index) {
-                  final feedback = _feedbacks[index];
-                  return Card(
-                    child: ExpansionTile(
-                      leading: CircleAvatar(
-                        backgroundColor: _getStatusColor(feedback.status),
-                        child: Icon(
-                          _getStatusIcon(feedback.status),
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                      title: Text(feedback.subject),
-                      subtitle: Text(
-                        'From: ${feedback.userName} | ${feedback.rating}/5',
-                      ),
-                      trailing: Chip(
-                        label: Text(
-                          feedback.status,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ),
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Message:',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(feedback.message),
-                              const SizedBox(height: 12),
-                              if (feedback.adminResponse != null &&
-                                  feedback.adminResponse!.trim().isNotEmpty)
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    'Response: ${feedback.adminResponse}',
-                                  ),
-                                ),
-                              if (feedback.adminResponse != null &&
-                                  feedback.adminResponse!.trim().isNotEmpty)
-                                const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: ElevatedButton(
-                                      onPressed:
+              : AdminShell(
+                title: 'Feedback Management',
+                subtitle: '$pendingCount pending items need admin review.',
+                leading: const BMorisBackButton(),
+                trailing: IconButton(
+                  onPressed: _loadFeedback,
+                  icon: const Icon(Icons.refresh_rounded, color: AdminUi.teal),
+                ),
+                child:
+                    _feedbacks.isEmpty
+                        ? const AdminEmptyState(
+                          icon: Icons.forum_outlined,
+                          title: 'No feedback yet',
+                          subtitle:
+                              'Submitted feedback will appear here for review.',
+                        )
+                        : Column(
+                          children:
+                              _feedbacks
+                                  .map(
+                                    (feedback) => _ManagementFeedbackCard(
+                                      feedback: feedback,
+                                      onRespond:
                                           () => _respondToFeedback(feedback),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue,
-                                      ),
-                                      child: Text(
-                                        feedback.status == 'pending'
-                                            ? 'Respond'
-                                            : 'Edit Response',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: OutlinedButton(
-                                      onPressed:
+                                      onDelete:
                                           () => _deleteFeedback(feedback.id),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: Colors.red,
-                                      ),
-                                      child: const Text('Delete'),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                                  )
+                                  .toList(),
                         ),
-                      ],
-                    ),
-                  );
-                },
               ),
     );
   }
+}
 
-  Color _getStatusColor(String status) {
+class _ManagementFeedbackCard extends StatelessWidget {
+  const _ManagementFeedbackCard({
+    required this.feedback,
+    required this.onRespond,
+    required this.onDelete,
+  });
+
+  final FeedbackModel feedback;
+  final VoidCallback onRespond;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasResponse =
+        feedback.adminResponse != null &&
+        feedback.adminResponse!.trim().isNotEmpty;
+
+    return AdminCard(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AdminUi.radius),
+        ),
+        leading: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: _statusColor(feedback.status).withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(
+            _statusIcon(feedback.status),
+            color: _statusColor(feedback.status),
+            size: 20,
+          ),
+        ),
+        title: Text(
+          feedback.subject.isEmpty ? feedback.category : feedback.subject,
+          style: AdminUi.body(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          'From: ${feedback.userName} | ${feedback.rating}/5',
+          style: AdminUi.caption(),
+        ),
+        trailing: AdminPill(label: feedback.status),
+        children: [
+          const Divider(height: 22, color: AdminUi.border),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text('Message', style: AdminUi.title()),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(feedback.message, style: AdminUi.body()),
+          ),
+          if (hasResponse) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AdminUi.mint,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AdminUi.border),
+              ),
+              child: Text(
+                'Response: ${feedback.adminResponse}',
+                style: AdminUi.body(AdminUi.tealDark),
+              ),
+            ),
+          ],
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: AdminActionButton.primary(
+                  label:
+                      feedback.status == 'pending'
+                          ? 'Respond'
+                          : 'Edit Response',
+                  icon: Icons.reply_rounded,
+                  onPressed: onRespond,
+                  expanded: true,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: AdminActionButton.danger(
+                  label: 'Delete',
+                  icon: Icons.delete_outline_rounded,
+                  onPressed: onDelete,
+                  expanded: true,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _statusColor(String status) {
     switch (status) {
       case 'pending':
-        return Colors.orange;
+        return const Color(0xFFE59B2F);
       case 'reviewed':
-        return Colors.blue;
+        return const Color(0xFF2D9BF0);
       case 'resolved':
-        return Colors.green;
+        return const Color(0xFF3DA96B);
       default:
-        return Colors.grey;
+        return AdminUi.muted;
     }
   }
 
-  IconData _getStatusIcon(String status) {
+  IconData _statusIcon(String status) {
     switch (status) {
       case 'pending':
-        return Icons.pending;
+        return Icons.more_horiz_rounded;
       case 'reviewed':
-        return Icons.visibility;
+        return Icons.visibility_rounded;
       case 'resolved':
-        return Icons.check_circle;
+        return Icons.check_circle_rounded;
       default:
-        return Icons.help;
+        return Icons.help_outline_rounded;
     }
   }
 }

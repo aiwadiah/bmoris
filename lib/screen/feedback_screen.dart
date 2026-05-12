@@ -190,7 +190,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   }
 
   Widget _buildTopBar() {
-    return Row(children: [const BMorisBackButton()]);
+    return Row(children: [const BMorisBackButton.plain()]);
   }
 
   Widget _buildHeader() {
