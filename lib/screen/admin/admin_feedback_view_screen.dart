@@ -120,7 +120,7 @@ class _AdminFeedbackViewScreenState extends State<AdminFeedbackViewScreen> {
                               SizedBox(
                                 width: 150,
                                 child: DropdownButtonFormField<int?>(
-                                  initialValue: _ratingFilter,
+                                  value: _ratingFilter,
                                   decoration: adminInputDecoration(
                                     label: 'Rating',
                                   ),

@@ -126,12 +126,32 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
                     children: [
-                      _buildHeader(),
-                      const SizedBox(height: 20),
-                      if (_weeklyEntries.isEmpty)
-                        _buildEmptyState()
-                      else ...[
-                        _buildPodium(currentUserId),
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Positioned(
+                            right: 10,
+                            top: 40,
+                            child: Image.asset(
+                              'assets/bmorisbird5.png',
+                              width: 140,
+                              height: 140,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          Column(
+                            children: [
+                              _buildHeader(),
+                              const SizedBox(height: 45),
+                              if (_weeklyEntries.isEmpty)
+                                _buildEmptyState()
+                              else
+                                _buildPodium(currentUserId),
+                            ],
+                          ),
+                        ],
+                      ),
+                      if (_weeklyEntries.isNotEmpty) ...[
                         const SizedBox(height: 20),
                         _buildLeaderboardList(currentUserId),
                         if (_shouldShowPinnedCurrentUser(currentUserId)) ...[
@@ -156,51 +176,28 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
+      color: Colors.transparent,
       child: Stack(
         children: [
-          Positioned(
-            right: -24,
-            top: 8,
-            child: Opacity(
-              opacity: 0.18,
-              child: Image.asset(
-                'assets/bmorisbird3.png',
-                width: 118,
-                height: 118,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
           Column(
             children: [
               Row(
                 children: [
                   const BMorisBackButton.plain(),
                   const Spacer(),
-                  const SizedBox(width: 40),
+                  Text(
+                    'Weekly Chart',
+                    style: GoogleFonts.poppins(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const Spacer(),
+                  const SizedBox(width: 48), // Balancing the back button
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Weekly Chart',
-                style: GoogleFonts.poppins(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1A1A1A),
-                ),
-              ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 2),
               Text(
                 _buildCountdownLabel(),
                 style: GoogleFonts.poppins(

@@ -232,7 +232,7 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
                                       Switch(
                                         value: announcement.isActive,
                                         onChanged: (_) => _toggleActive(announcement),
-                                        activeThumbColor: AdminUi.teal,
+                                        activeColor: AdminUi.teal,
                                       ),
                                       PopupMenuButton<String>(
                                         onSelected: (value) {
