@@ -70,7 +70,7 @@ class _AdminFeedbackManagementScreenState
                     ),
                     const SizedBox(height: 14),
                     DropdownButtonFormField<String>(
-                      initialValue: selectedStatus,
+                      value: selectedStatus,
                       decoration: adminInputDecoration(label: 'Status'),
                       items: const [
                         DropdownMenuItem(

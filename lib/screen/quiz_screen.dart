@@ -446,15 +446,17 @@ class _QuizScreenState extends State<QuizScreen> {
                   onPressed: () async {
                     final authProvider =
                         Provider.of<AuthProvider>(context, listen: false);
-                    await authProvider.addXp(quizProvider.score);
-                    await authProvider.incrementActivityCount();
+                    final score = quizProvider.score;
+                    
+                    // Award XP and reset state
+                    authProvider.addXp(score);
+                    authProvider.incrementActivityCount();
+                    
                     if (mounted) {
                       setState(() {
                         _hasStarted = false;
                       });
                       quizProvider.reset();
-                      quizProvider.loadAdaptiveQuizzes(
-                          quizProvider.currentDifficulty);
                     }
                   },
                   style: ElevatedButton.styleFrom(
