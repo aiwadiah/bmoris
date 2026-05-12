@@ -129,7 +129,7 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
         children: [
           Expanded(
             child: DropdownButtonFormField<int>(
-              value: _levelFilter,
+              initialValue: _levelFilter,
               decoration: InputDecoration(
                 labelText: 'Level',
                 labelStyle: GoogleFonts.poppins(fontSize: 12),
@@ -156,7 +156,7 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: DropdownButtonFormField<String>(
-              value: _categoryFilter,
+              initialValue: _categoryFilter,
               decoration: InputDecoration(
                 labelText: 'Content',
                 labelStyle: GoogleFonts.poppins(fontSize: 12),

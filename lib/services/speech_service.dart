@@ -12,7 +12,7 @@ class SpeechService {
   final FirestoreService _firestoreService = FirestoreService();
   bool _isInitialized = false;
 
-  static const String _apiKey = 'AIzaSyC_CDAIBJTBWUpD8JJt60lN1qyyXB6025M';
+  static const String _apiKey = 'REDACTED_GEMINI_KEY';
   static const String _modelName = 'gemini-2.5-flash';
 
   Future<bool> initialize() async {

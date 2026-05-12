@@ -341,7 +341,7 @@ class _AIQuizGeneratorDialogState extends State<_AIQuizGeneratorDialog> {
             TextFormField(controller: _categoryController, decoration: adminInputDecoration(label: 'Category'), validator: _required),
             const SizedBox(height: 12),
             DropdownButtonFormField<int>(
-              value: _difficulty,
+              initialValue: _difficulty,
               decoration: adminInputDecoration(label: 'Difficulty'),
               items: List.generate(5, (i) => i + 1).map((level) => DropdownMenuItem(value: level, child: Text('Level $level'))).toList(),
               onChanged: (value) => setState(() => _difficulty = value!),
@@ -466,7 +466,7 @@ class _QuizEditorScreenState extends State<_QuizEditorScreen> {
                     TextFormField(controller: _categoryController, decoration: adminInputDecoration(label: 'Category'), validator: _required),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<int>(
-                      value: _difficulty,
+                      initialValue: _difficulty,
                       decoration: adminInputDecoration(label: 'Difficulty'),
                       items: List.generate(5, (i) => i + 1).map((level) => DropdownMenuItem(value: level, child: Text('Level $level'))).toList(),
                       onChanged: (value) => setState(() => _difficulty = value!),

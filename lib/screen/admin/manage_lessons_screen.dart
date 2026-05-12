@@ -327,7 +327,7 @@ class _LessonFormScreenState extends State<_LessonFormScreen> {
                     TextFormField(controller: _categoryController, decoration: adminInputDecoration(label: 'Category'), validator: _required),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<int>(
-                      value: _difficulty,
+                      initialValue: _difficulty,
                       decoration: adminInputDecoration(label: 'Difficulty'),
                       items: List.generate(5, (i) => i + 1).map((level) => DropdownMenuItem(value: level, child: Text('Level $level'))).toList(),
                       onChanged: (value) => setState(() => _difficulty = value!),
@@ -447,7 +447,7 @@ class _ContentFormDialogState extends State<_ContentFormDialog> {
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
-                value: _type,
+                initialValue: _type,
                 decoration: adminInputDecoration(label: 'Content Type'),
                 items: const [
                   DropdownMenuItem(value: 'text', child: Text('Text')),

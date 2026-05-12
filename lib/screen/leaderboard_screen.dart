@@ -248,7 +248,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   }
 
   Widget _buildPodium(String currentUserId) {
-    final first = _weeklyEntries.length > 0 ? _weeklyEntries[0] : null;
+    final first = _weeklyEntries.isNotEmpty ? _weeklyEntries[0] : null;
     final second = _weeklyEntries.length > 1 ? _weeklyEntries[1] : null;
     final third = _weeklyEntries.length > 2 ? _weeklyEntries[2] : null;
 
