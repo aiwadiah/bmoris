@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../services/firestore_service.dart';
-import '../../models/user_model.dart';
+
 import '../../models/feedback_model.dart';
+import '../../models/user_model.dart';
+import '../../services/firestore_service.dart';
+import '../../widgets/admin_ui.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -28,511 +28,435 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-
     try {
       _analytics = await _firestoreService.getUserAnalytics();
       _users = await _firestoreService.getAllUsers();
       _feedbacks = await _firestoreService.getAllFeedback();
-    } catch (e) {
-      // Handle error
+    } catch (_) {}
+    if (mounted) {
+      setState(() => _isLoading = false);
     }
-
-    setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin Dashboard'),
-        backgroundColor: const Color(0xFF00796B),
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadData,
+    return AdminPage(
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+        height: 68,
+        backgroundColor: Colors.white,
+        indicatorColor: Colors.transparent,
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => AdminUi.caption(
+            states.contains(WidgetState.selected) ? AdminUi.teal : AdminUi.muted,
           ),
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              Navigator.pushNamed(context, '/admin/profile');
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await Provider.of<AuthProvider>(context, listen: false).signOut();
-              if (mounted) {
-                Navigator.pushReplacementNamed(context, '/login');
-              }
-            },
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : IndexedStack(
-              index: _selectedIndex,
-              children: [
-                _buildOverview(),
-                _buildUserManagement(),
-                _buildFeedbackManagement(),
-                _buildContentManagement(),
-              ],
+        ),
+        destinations: [
+          NavigationDestination(
+            icon: Icon(
+              Icons.home_rounded,
+              color: _selectedIndex == 0 ? AdminUi.teal : AdminUi.muted,
             ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF00796B),
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Overview',
+            label: 'Home',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
+          NavigationDestination(
+            icon: Icon(
+              Icons.people_alt_rounded,
+              color: _selectedIndex == 1 ? AdminUi.teal : AdminUi.muted,
+            ),
             label: 'Users',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.feedback),
-            label: 'Feedback',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.book),
+          NavigationDestination(
+            icon: Icon(
+              Icons.library_books_rounded,
+              color: _selectedIndex == 2 ? AdminUi.teal : AdminUi.muted,
+            ),
             label: 'Content',
+          ),
+          NavigationDestination(
+            icon: Icon(
+              Icons.campaign_rounded,
+              color: _selectedIndex == 3 ? AdminUi.teal : AdminUi.muted,
+            ),
+            label: 'Alerts',
           ),
         ],
       ),
+      child:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : IndexedStack(
+                index: _selectedIndex,
+                children: [
+                  _buildOverview(),
+                  _buildUsersView(),
+                  _buildContentView(),
+                  _buildAnnouncementView(),
+                ],
+              ),
     );
   }
 
   Widget _buildOverview() {
+    final pendingCount =
+        _feedbacks.where((feedback) => feedback.status == 'pending').length;
+    final userCount = (_analytics['totalUsers'] ?? _users.length).toString();
+    final pronunciationCount =
+        '${_analytics['totalPronunciationAttempts'] ?? 0}';
+    final quizCount = '${_analytics['totalQuizAttempts'] ?? 0}';
+    final averageXp = '${_analytics['averageXp'] ?? 0}';
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Analytics Overview',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-
-          // Stats Grid
-          GridView.count(
-            shrinkWrap: true,
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.3,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              _buildStatCard(
-                'Total Users',
-                '${_analytics['totalUsers'] ?? 0}',
-                Icons.people,
-                Colors.blue,
-              ),
-              _buildStatCard(
-                'Pronunciations',
-                '${_analytics['totalPronunciationAttempts'] ?? 0}',
-                Icons.mic,
-                Colors.green,
-              ),
-              _buildStatCard(
-                'Quiz Attempts',
-                '${_analytics['totalQuizAttempts'] ?? 0}',
-                Icons.quiz,
-                Colors.orange,
-              ),
-              _buildStatCard(
-                'Average XP',
-                '${_analytics['averageXp'] ?? 0}',
-                Icons.star,
-                Colors.amber,
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Recent Feedback
-          const Text(
-            'Recent Feedback',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          if (_feedbacks.isEmpty)
-            const Card(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Center(child: Text('No feedback yet')),
-              ),
-            )
-          else
-            ..._feedbacks.take(5).map((feedback) => Card(
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: _getStatusColor(feedback.status),
-                      child: Icon(
-                        _getStatusIcon(feedback.status),
-                        color: Colors.white,
-                        size: 20,
+          // Green Header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(24, 40, 24, 130), // Reduced from 150 to tighten gap
+            decoration: const BoxDecoration(
+              color: AdminUi.teal,
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Admin Dashboard',
+                        style: AdminUi.headline(Colors.white),
                       ),
                     ),
-                    title: Text(feedback.subject),
-                    subtitle: Text(feedback.userName),
-                    trailing: Text(feedback.status),
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: _loadData,
+                          icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pushNamed(context, '/admin/profile'),
+                          icon: const Icon(Icons.person_outline_rounded, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'A quick view of activity, users, and content health.',
+                  style: AdminUi.body(Colors.white.withValues(alpha: 0.8)),
+                ),
+              ],
+            ),
+          ),
+
+          // Overlapping Content
+          Transform.translate(
+            offset: const Offset(0, -110), // Adjusted offset to keep stat cards fully on green
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GridView.count(
+                    crossAxisCount: 4,
+                    shrinkWrap: true,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    physics: const NeverScrollableScrollPhysics(),
+                    childAspectRatio: .9,
+                    children: [
+                      AdminStatCard(label: 'Users', value: userCount, icon: Icons.people_alt_rounded),
+                      AdminStatCard(label: 'Practice', value: pronunciationCount, icon: Icons.mic_none_rounded),
+                      AdminStatCard(label: 'Quizzes', value: quizCount, icon: Icons.quiz_outlined),
+                      AdminStatCard(label: 'Avg XP', value: averageXp, icon: Icons.bolt_rounded),
+                    ],
                   ),
-                )),
+                  const SizedBox(height: 32), // Increased gap before Admin Tools
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: AdminSectionTitle(
+                      'Admin Tools',
+                      trailing: Text('$pendingCount pending', style: AdminUi.caption()),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  AdminCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _overviewAction(
+                          icon: Icons.campaign_rounded,
+                          title: 'Manage announcements',
+                          subtitle: 'Create updates and make them visible to learners.',
+                          onTap: () => Navigator.pushNamed(context, '/admin/announcements'),
+                        ),
+                        _overviewAction(
+                          icon: Icons.book_rounded,
+                          title: 'Manage lessons',
+                          subtitle: 'Edit lesson cards, content, and publish status.',
+                          onTap: () => Navigator.pushNamed(context, '/admin/lessons'),
+                        ),
+                        _overviewAction(
+                          icon: Icons.quiz_rounded,
+                          title: 'Manage quizzes',
+                          subtitle: 'Update quiz sets or create new practice content.',
+                          onTap: () => Navigator.pushNamed(context, '/admin/quizzes'),
+                        ),
+                        _overviewAction(
+                          icon: Icons.psychology_alt_rounded,
+                          title: 'AI prompt library',
+                          subtitle: 'Tune prompt behavior for tutor and content tools.',
+                          onTap: () => Navigator.pushNamed(context, '/admin/ai-prompts'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4),
+                    child: AdminSectionTitle('Recent Activity'),
+                  ),
+                  const SizedBox(height: 12),
+                  AdminCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_feedbacks.isEmpty)
+                          Text('No recent feedback yet.', style: AdminUi.body(AdminUi.muted))
+                        else
+                          ..._feedbacks.take(4).map(
+                                (feedback) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 34,
+                                        height: 34,
+                                        decoration: BoxDecoration(
+                                          color: _statusColor(feedback.status).withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Icon(
+                                          _statusIcon(feedback.status),
+                                          size: 18,
+                                          color: _statusColor(feedback.status),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              feedback.subject.isEmpty ? 'General feedback' : feedback.subject,
+                                              style: AdminUi.body(),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            Text(
+                                              feedback.userName,
+                                              style: AdminUi.caption(),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Text(feedback.status, style: AdminUi.caption(_statusColor(feedback.status))),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: color,
+  Widget _buildUsersView() {
+    return AdminShell(
+      title: 'Users',
+      subtitle: '${_users.length} total accounts',
+      trailing: IconButton(
+        onPressed: () => Navigator.pushNamed(context, '/admin/users'),
+        icon: const Icon(Icons.open_in_new_rounded, color: AdminUi.teal),
+      ),
+      child: Column(
+        children: [
+          ..._users.take(8).map(
+            (user) => AdminCard(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: user.isAdmin ? const Color(0xFFEAD8A7) : AdminUi.teal,
+                    child: Text(
+                      user.name.isEmpty ? '?' : user.name[0].toUpperCase(),
+                      style: TextStyle(
+                        color: user.isAdmin ? AdminUi.text : Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(user.name, style: AdminUi.body()),
+                        Text(user.email, style: AdminUi.caption()),
+                      ],
+                    ),
+                  ),
+                  AdminPill(label: user.role == 'admin' ? 'Admin' : 'Learner'),
+                ],
               ),
             ),
-            Text(
-              title,
-              style: const TextStyle(color: Colors.grey, fontSize: 11),
-              textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContentView() {
+    return AdminShell(
+      title: 'Content',
+      subtitle: 'Manage learning assets and supporting tools.',
+      child: Column(
+        children: [
+          _navigationCard('Manage Lessons', 'Review lesson visibility and lesson flow.', Icons.menu_book_rounded, '/admin/lessons'),
+          _navigationCard('Manage Quizzes', 'Keep practice banks current and levelled.', Icons.quiz_rounded, '/admin/quizzes'),
+          _navigationCard('Phoneme Library', 'Update phoneme examples and labels.', Icons.record_voice_over_rounded, '/admin/phonemes'),
+          _navigationCard('Data Management', 'Import and refresh bundled source data.', Icons.storage_rounded, '/admin/data'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnnouncementView() {
+    final pendingFeedback =
+        _feedbacks.where((feedback) => feedback.status == 'pending').length;
+    return AdminShell(
+      title: 'Announcements',
+      subtitle: '$pendingFeedback feedback items still need review.',
+      child: Column(
+        children: [
+          _navigationCard('Manage Announcements', 'Publish notices and toggle visibility.', Icons.campaign_rounded, '/admin/announcements'),
+          _navigationCard('Feedback View', 'Open the filtered feedback inbox.', Icons.rate_review_rounded, '/admin/feedback/view'),
+          _navigationCard('Feedback Management', 'Respond and resolve submitted feedback.', Icons.forum_rounded, '/admin/feedback/manage'),
+          _navigationCard('AI Prompt Library', 'Fine-tune prompt behavior for admin tools.', Icons.psychology_alt_rounded, '/admin/ai-prompts'),
+        ],
+      ),
+    );
+  }
+
+  Widget _overviewAction({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: AdminUi.mint,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: AdminUi.teal, size: 20),
             ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: AdminUi.body()),
+                  Text(subtitle, style: AdminUi.caption()),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: AdminUi.muted),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildUserManagement() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              const Text(
-                'User Management',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const Spacer(),
-              Text('${_users.length} users'),
-            ],
-          ),
-        ),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: _users.length,
-            itemBuilder: (context, index) {
-              final user = _users[index];
-              return Card(
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: const Color(0xFF00796B),
-                    child: Text(
-                      user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  title: Text(user.name),
-                  subtitle: Text(user.email),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Chip(
-                        label: Text(
-                          user.role,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        backgroundColor: user.isAdmin
-                            ? Colors.red.shade100
-                            : Colors.blue.shade100,
-                      ),
-                      const SizedBox(width: 8),
-                      Text('${user.xp} XP'),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFeedbackManagement() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              const Text(
-                'User Feedback',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const Spacer(),
-              Text('${_feedbacks.length} feedbacks'),
-            ],
-          ),
-        ),
-        Expanded(
-          child: _feedbacks.isEmpty
-              ? const Center(child: Text('No feedback yet'))
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _feedbacks.length,
-                  itemBuilder: (context, index) {
-                    final feedback = _feedbacks[index];
-                    return Card(
-                      child: ExpansionTile(
-                        leading: CircleAvatar(
-                          backgroundColor: _getStatusColor(feedback.status),
-                          child: Icon(
-                            _getStatusIcon(feedback.status),
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                        title: Text(feedback.subject),
-                        subtitle: Text('From: ${feedback.userName}'),
-                        trailing: Chip(
-                          label: Text(
-                            feedback.status,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ),
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Message:',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(feedback.message),
-                                const SizedBox(height: 16),
-                                if (feedback.status == 'pending')
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          onPressed: () => _respondToFeedback(
-                                              feedback, 'reviewed'),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.blue,
-                                          ),
-                                          child: const Text('Reviewed',
-                                              style: TextStyle(color: Colors.white)),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          onPressed: () => _respondToFeedback(
-                                              feedback, 'resolved'),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.green,
-                                          ),
-                                          child: const Text('Resolved',
-                                              style: TextStyle(color: Colors.white)),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildContentManagement() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Content Management',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-
-          // Management Cards
-          GridView.count(
-            shrinkWrap: true,
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              _buildManagementCard(
-                'Manage Lessons',
-                'Add, edit, or remove lessons',
-                Icons.book,
-                Colors.blue,
-                () {
-                  Navigator.pushNamed(context, '/admin/lessons');
-                },
-              ),
-              _buildManagementCard(
-                'Manage Quizzes',
-                'Create and manage quizzes',
-                Icons.quiz,
-                Colors.orange,
-                () {
-                  Navigator.pushNamed(context, '/admin/quizzes');
-                },
-              ),
-              _buildManagementCard(
-                'Phoneme Library',
-                'Manage phoneme definitions',
-                Icons.record_voice_over,
-                Colors.green,
-                () {
-                  Navigator.pushNamed(context, '/admin/phonemes');
-                },
-              ),
-              _buildManagementCard(
-                'Announcements',
-                'Create announcements',
-                Icons.announcement,
-                Colors.purple,
-                () {
-                  Navigator.pushNamed(context, '/admin/announcements');
-                },
-              ),
-              _buildManagementCard(
-                'Seed Data',
-                'Import lessons & quizzes',
-                Icons.upload_file,
-                Colors.teal,
-                () {
-                  Navigator.pushNamed(context, '/admin/data');
-                },
-              ),
-              _buildManagementCard(
-                'Manage Users',
-                'View and manage users',
-                Icons.people,
-                Colors.indigo,
-                () {
-                  Navigator.pushNamed(context, '/admin/users');
-                },
-              ),
-              _buildManagementCard(
-                'AI Prompts',
-                'Configure AI training prompts',
-                Icons.psychology,
-                Colors.pink,
-                () {
-                  Navigator.pushNamed(context, '/admin/ai-prompts');
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildManagementCard(
-    String title,
-    String description,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return Card(
+  Widget _navigationCard(String title, String subtitle, IconData icon, String route) {
+    return AdminCard(
+      margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 40),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-                textAlign: TextAlign.center,
+        onTap: () => Navigator.pushNamed(context, route),
+        borderRadius: BorderRadius.circular(AdminUi.radius),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AdminUi.mint,
+                borderRadius: BorderRadius.circular(14),
               ),
-              const SizedBox(height: 4),
-              Text(
-                description,
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                textAlign: TextAlign.center,
+              child: Icon(icon, color: AdminUi.teal, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: AdminUi.body()),
+                  Text(subtitle, style: AdminUi.caption()),
+                ],
               ),
-            ],
-          ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: AdminUi.muted),
+          ],
         ),
       ),
     );
   }
 
-  Color _getStatusColor(String status) {
+  Color _statusColor(String status) {
     switch (status) {
       case 'pending':
-        return Colors.orange;
+        return const Color(0xFFE59B2F);
       case 'reviewed':
-        return Colors.blue;
+        return const Color(0xFF4E8DF5);
       case 'resolved':
-        return Colors.green;
+        return const Color(0xFF3DA96B);
       default:
-        return Colors.grey;
+        return AdminUi.muted;
     }
   }
 
-  IconData _getStatusIcon(String status) {
+  IconData _statusIcon(String status) {
     switch (status) {
       case 'pending':
-        return Icons.pending;
+        return Icons.schedule_rounded;
       case 'reviewed':
-        return Icons.visibility;
+        return Icons.remove_red_eye_outlined;
       case 'resolved':
-        return Icons.check_circle;
+        return Icons.check_circle_outline_rounded;
       default:
-        return Icons.help;
+        return Icons.help_outline_rounded;
     }
-  }
-
-  Future<void> _respondToFeedback(FeedbackModel feedback, String status) async {
-    await _firestoreService.respondToFeedback(
-        feedback.id, 'Status updated to $status');
-    _loadData();
   }
 }

@@ -1,6 +1,6 @@
 class PronunciationAttempt {
   final String id;
-  final String oderId;
+  final String userId;
   final String targetText;
   final String spokenText;
   final double accuracyScore;
@@ -10,7 +10,7 @@ class PronunciationAttempt {
 
   PronunciationAttempt({
     required this.id,
-    required this.oderId,
+    required this.userId,
     required this.targetText,
     required this.spokenText,
     required this.accuracyScore,
@@ -37,7 +37,7 @@ class PronunciationAttempt {
 
     return PronunciationAttempt(
       id: id,
-      oderId: map['userId'] ?? '',
+      userId: map['userId'] ?? '',
       targetText: map['targetText'] ?? '',
       spokenText: map['spokenText'] ?? '',
       accuracyScore: (map['accuracyScore'] ?? 0).toDouble(),
@@ -52,7 +52,7 @@ class PronunciationAttempt {
 
   Map<String, dynamic> toMap() {
     return {
-      'userId': oderId,
+      'userId': userId,
       'targetText': targetText,
       'spokenText': spokenText,
       'accuracyScore': accuracyScore,
