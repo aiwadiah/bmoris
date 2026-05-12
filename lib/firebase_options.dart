@@ -42,7 +42,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyDu1Fn7ZrI2-BIN0MT1zm6ZaqP_GXuMGoU',
-    appId: '1:94172327212:ios:bmoris-ios-app',
+    appId: '1:94172327212:ios:e52a8544d2d5458c565089',
     messagingSenderId: '94172327212',
     projectId: 'bmoris-55fdb',
     storageBucket: 'bmoris-55fdb.firebasestorage.app',
@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyDu1Fn7ZrI2-BIN0MT1zm6ZaqP_GXuMGoU',
-    appId: '1:94172327212:macos:bmoris-macos-app',
+    appId: '1:94172327212:ios:e52a8544d2d5458c565089',
     messagingSenderId: '94172327212',
     projectId: 'bmoris-55fdb',
     storageBucket: 'bmoris-55fdb.firebasestorage.app',

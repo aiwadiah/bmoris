@@ -307,7 +307,7 @@ class _UserFormDialogState extends State<_UserFormDialog> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
-                value: _level,
+                initialValue: _level,
                 decoration: adminInputDecoration(label: 'Level'),
                 items: List.generate(50, (i) => i + 1).map((level) {
                   return DropdownMenuItem(value: level, child: Text('Level $level'));

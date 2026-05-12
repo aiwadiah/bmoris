@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../../models/feedback_model.dart';
 import '../../models/user_model.dart';
-import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/admin_ui.dart';
 
