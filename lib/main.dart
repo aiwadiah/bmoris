@@ -47,14 +47,17 @@ Future<void> _ensureFirebaseInitialized() {
 }
 
 Future<void> _initializeFirebaseOnce() async {
-  try {
-    Firebase.app();
+  if (Firebase.apps.isNotEmpty) {
     return;
-  } catch (_) {
-    // No default Firebase app yet. Initialize it below.
   }
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  if (!kIsWeb && Platform.isIOS) {
+    await Firebase.initializeApp();
+  } else {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
 }
 
 @pragma('vm:entry-point')
